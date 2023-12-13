@@ -1,11 +1,19 @@
-Package: mapdotoro
 Type: Package
-Title: What the Package Does (Title Case)
+Package: mapdotoro
+Title: Prepare The Fluvial Corridor Toolbox Python Data
 Version: 0.1.0
-Author: Who wrote it
-Maintainer: The package maintainer <yourself@somewhere.net>
-Description: More about what it does (maybe more than one line)
-    Use four spaces when indenting paragraphs within the Description.
-License: What license is it under?
+Authors@R: 
+    person("Louis", "Manière", , "louis.maniere@ens-lyon.fr", role = c("aut", "cre"),
+           comment = c(ORCID = "0000-0003-0426-2975"))
+Description: A R package to prepare the Fluvial Corridor Toolbox Python
+    data to mapdoapp web application.
+License: GPL (>= 3)
+Imports: 
+    sf
+Suggests: 
+    testthat (>= 3.0.0)
+Config/testthat/edition: 3
 Encoding: UTF-8
 LazyData: true
+Roxygen: list(markdown = TRUE)
+RoxygenNote: 7.2.3
