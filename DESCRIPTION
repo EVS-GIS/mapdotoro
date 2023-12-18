@@ -8,8 +8,8 @@ Authors@R:
 Description: A R package to prepare the Fluvial Corridor Toolbox Python
     data to mapdoapp web application.
 License: GPL (>= 3)
-Imports: 
-    sf
+Depends: 
+    R (>= 2.10)
 Suggests: 
     testthat (>= 3.0.0)
 Config/testthat/edition: 3

@@ -6,4 +6,12 @@
 .httr-oauth
 .DS_Store
 .quarto
-/inst/extdata
+*.shp
+*.cpg
+*.prj
+*.dbf
+*.qmd
+*.gpkg
+*.shx
+*.csv
+*.vrt
