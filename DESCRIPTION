@@ -10,6 +10,11 @@ Description: A R package to prepare the Fluvial Corridor Toolbox Python
 License: GPL (>= 3)
 Depends: 
     R (>= 2.10)
+Imports: 
+    dplyr,
+    glue,
+    magrittr,
+    sf
 Suggests: 
     testthat (>= 3.0.0)
 Config/testthat/edition: 3

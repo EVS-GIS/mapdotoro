@@ -34,6 +34,11 @@ devtools::install_github("EVS-GIS/mapdotoro")
 Testing dataset can be found
 
 ```{r}
+library(dplyr)
+library(sf)
+library(tmap)
+library(mapdotoro)
+
 data(bassin_hydrographique)
 data(region_hydrographique)
 data(referentiel_hydro)
@@ -43,15 +48,36 @@ data(swaths)
 Map dataset
 ```{r, eval = FALSE}
 tmap::tmap_mode("view")
-tmap::tm_shape(bassin_hydrographique) +
+map <- tmap::tm_shape(bassin_hydrographique) +
   tmap::tm_polygons()+
 tmap::tm_shape(region_hydrographique) +
   tmap::tm_polygons()+
 tmap::tm_shape(swaths) +
   tmap::tm_polygons()+
 tmap::tm_shape(referentiel_hydro) +
-  tmap::tm_lines()
+  tmap::tm_lines(col= "blue")
+map
 ```
+
+clean dataset
+```{r}
+swaths_data <- swaths %>% 
+  dplyr::filter(VALUE == 2) # keep only valid swaths
+
+sf::st_geometry(swaths_data) <- "geom" # standard geometry column
+
+duplicated_swaths <- check_duplicate(swaths_data)
+cleaned_swaths <- clean_duplicated(dataset = swaths_data,
+                                   duplicated_dataset = duplicated_swaths)
+
+```
+
+```{r, eval = FALSE}
+map + tmap::tm_shape(duplicated_swaths) + 
+  tmap::tm_polygons(col = "red")
+```
+
+
 
 
 
