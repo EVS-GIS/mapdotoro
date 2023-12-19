@@ -22,7 +22,8 @@ check_duplicate <- function(dataset,
   for (axis in unique(dataset[[axis_field]])){
     net_axe <- dataset %>%
       dplyr::filter(.data[[axis_field]]==axis)
-    if (any(duplicated(net_axe[[measure_field]]))==TRUE){
+    # check for duplicate but exclude NA value in measure_field
+    if (any(duplicated(net_axe[[measure_field]][complete.cases(net_axe[[measure_field]])])) ==TRUE){
       duplicate <- glue::glue("L'axe {axis} a des doublons")
       message(duplicate)
       duplicated_rows <- rbind(duplicated_rows, net_axe[duplicated(net_axe[[measure_field]]) |

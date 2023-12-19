@@ -25,28 +25,28 @@ Testing dataset can be found
 
 ``` r
 library(dplyr)
-#> Warning: le package 'dplyr' a été compilé avec la version R 4.2.3
-#> 
-#> Attachement du package : 'dplyr'
-#> Les objets suivants sont masqués depuis 'package:stats':
-#> 
-#>     filter, lag
-#> Les objets suivants sont masqués depuis 'package:base':
-#> 
-#>     intersect, setdiff, setequal, union
 library(sf)
-#> Warning: le package 'sf' a été compilé avec la version R 4.2.3
-#> Linking to GEOS 3.9.3, GDAL 3.5.2, PROJ 8.2.1; sf_use_s2() is TRUE
 library(tmap)
-#> Warning: le package 'tmap' a été compilé avec la version R 4.2.3
-#> Breaking News: tmap 3.x is retiring. Please test v4, e.g. with
-#> remotes::install_github('r-tmap/tmap')
 library(mapdotoro)
+library(tidyr)
+library(lwgeom)
+library(qgisprocess)
 
 data(bassin_hydrographique)
 data(region_hydrographique)
 data(referentiel_hydro)
 data(swaths)
+data(talweg_metrics)
+data(landcover)
+```
+
+set geometry column name
+
+``` r
+st_geometry(bassin_hydrographique) <- "geometry"
+st_geometry(region_hydrographique) <- "geometry"
+st_geometry(referentiel_hydro) <- "geometry"
+st_geometry(swaths) <- "geometry"
 ```
 
 Map dataset
@@ -64,21 +64,110 @@ tmap::tm_shape(referentiel_hydro) +
 map
 ```
 
-clean dataset
+clean swaths
 
 ``` r
 swaths_data <- swaths %>% 
   dplyr::filter(VALUE == 2) # keep only valid swaths
 
-sf::st_geometry(swaths_data) <- "geom" # standard geometry column
-
 duplicated_swaths <- check_duplicate(swaths_data)
-#> L'axe 2000796122 a des doublons
 cleaned_swaths <- clean_duplicated(dataset = swaths_data,
                                    duplicated_dataset = duplicated_swaths)
+  # dplyr::mutate(id = row_number())
 ```
 
+clip referentiel hydro by swaths
+
 ``` r
-map + tmap::tm_shape(duplicated_swaths) + 
-  tmap::tm_polygons(col = "red")
+hydro_swaths <- st_sf(st_sfc(crs = 2154)) # create an empty sf dataset
+# clip by axis
+for (axis in unique(cleaned_swaths$AXIS)){
+  swaths_axe <- cleaned_swaths %>%
+    filter(AXIS == axis) # get swaths by axis
+  hydro_axe <- referentiel_hydro %>%
+    filter(AXIS == axis) %>% # get streams by axis
+    st_zm () %>% 
+    st_combine() %>% 
+    st_sf() %>% 
+    st_line_merge()
+  hydro_swaths_axis <- hydro_axe %>% 
+    st_split(swaths_axe) %>%
+    st_collection_extract("LINESTRING") %>%
+    st_join(swaths_axe, join = st_within) %>% 
+    mutate(AXIS = ifelse(is.na(AXIS), axis, AXIS))
+  hydro_swaths <- rbind(hydro_swaths, hydro_swaths_axis) # fill the output dataset by axis
+}
+```
+
+clean hydro_swaths
+
+``` r
+hydro_swaths_len <- hydro_swaths %>%
+  mutate(id = row_number()) %>% 
+  mutate(LENG = st_length(.))
+  # mutate(M = ifelse(LENG < units::set_units(10, m), NA, M)) # length is unit object
+
+hydro_swaths_len_dupl <- check_duplicate(hydro_swaths_len)
+
+hydro_swaths_len_dupl_corr <- st_sf(st_sfc(crs = 2154)) # create an empty sf dataset
+for (measure in unique(hydro_swaths_len_dupl$M)){
+  hydro_swaths_len_dupl_measure <- hydro_swaths_len_dupl %>% 
+    filter(M == measure) %>% 
+    filter(LENG < max(LENG)) %>% 
+    mutate(M = -1)
+  hydro_swaths_len_dupl_corr <- rbind(hydro_swaths_len_dupl_corr, hydro_swaths_len_dupl_measure)
+}
+
+hydro_swaths_len_dupl_corr <- hydro_swaths_len_dupl_corr %>%
+  st_drop_geometry() %>% 
+  select (id, M)
+
+merged_hydro_swaths <- merge(hydro_swaths_len, hydro_swaths_len_dupl_corr, by = "id", all.x = TRUE) %>% 
+  mutate(M.x = ifelse(!is.na(M.y) & M.y == -1, NA, M.x)) %>% 
+  select(-M.y) %>% 
+  rename("M" = M.x) %>% 
+  select(AXIS, M, DRAINAGE, geometry)
+```
+
+Measure network from outlet
+
+``` r
+identifynetworknodes <- merged_hydro_swaths %>% 
+  qgis_run_algorithm_p("fct:identifynetworknodes",
+                       QUANTIZATION = 100000000)
+
+hydro_swaths_identified <- st_read(identifynetworknodes$OUTPUT) %>% 
+  filter(NODEA != NODEB) # remove row when NODEA = NODEB (when distance is too short the node id is the same)
+
+measurenetworkfromoutlet <- hydro_swaths_identified %>% 
+  qgis_run_algorithm_p("fct:measurenetworkfromoutlet",
+                       FROM_NODE_FIELD = "NODEA",
+                       TO_NODE_FIELD = "NODEB")
+
+hydro_swaths_measured <- st_read(measurenetworkfromoutlet$OUTPUT) %>% 
+  st_zm()
+
+# st_write(hydro_swaths_measured, dsn = "data-raw/temp/hydro_swaths_measured.gpkg", layer = "hydro_swaths_measured", delete_dsn = TRUE)
+```
+
+Add talweg metrics to swaths
+
+``` r
+swath_join_landcover <- cleaned_swaths %>% 
+  dplyr::inner_join(landcover, by = c("M"="measure", "AXIS"="axis"))
+```
+
+Add landcover to swaths
+
+``` r
+landcover_prepared <- swath_join_landcover %>% 
+  sf::st_drop_geometry() %>%
+  dplyr::mutate(area_ha = area/10000) %>%  # convert m2 to ha
+  dplyr::select(id, label, area_ha) %>% 
+  tidyr::pivot_wider(names_from = label, values_from = area_ha) %>% 
+  rename_with(~stringr::str_replace_all(., " ", "_"), everything())%>%
+  mutate(sum_area = rowSums(select(., Crops, Dense_Urban, Diffuse_Urban,
+                                              Forest, Grassland, Gravel_Bars,
+                                              Infrastructures, Natural_Open,
+                                              Water_Channel), na.rm = TRUE))
 ```
