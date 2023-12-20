@@ -42,8 +42,10 @@ library(tidyr)
 library(lwgeom)
 library(qgisprocess)
 
-bassin_hydrographique <- bassin_hydrographique
-region_hydrographique <- region_hydrographique
+bassin_hydrographique <- bassin_hydrographique %>% 
+  rename_with(tolower)
+region_hydrographique <- region_hydrographique %>% 
+  rename_with(tolower)
 referentiel_hydro <- referentiel_hydro
 swaths <- swaths
 talweg_metrics <- talweg_metrics
