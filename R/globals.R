@@ -1,4 +1,3 @@
 globalVariables(unique(c(
-  # check_duplicate:
-  ".data"
+  ":=", ".data", "complete.cases", ".", "area", "area_ha", "axis", "measure", "side", "sum_area"
 )))

@@ -38,6 +38,7 @@ referentiel_hydro <- referentiel_hydro
 swaths <- swaths
 talweg_metrics <- talweg_metrics
 landcover <- landcover
+continuity <- continuity
 ```
 
 set geometry column name
@@ -159,18 +160,10 @@ talweg_metrics <- talweg_metrics %>%
   select(-swath)
 ```
 
-Prepare landcover area
+Prepare landcover and continuity area
 
 ``` r
-landcover_prepared <- landcover %>% 
-  mutate(area_ha = area/10000) %>%  # convert m2 to ha
-  select(label, side, area_ha, axis, measure) %>% 
-  pivot_wider(names_from = label, values_from = area_ha) %>% 
-  rename_with(~stringr::str_replace_all(., " ", "_"), everything()) %>% 
-  mutate(sum_area = rowSums(select(., Crops, Dense_Urban, Diffuse_Urban,
-                                              Forest, Grassland, Gravel_Bars,
-                                              Infrastructures, Natural_Open,
-                                              Water_Channel), na.rm = TRUE))
-```
+landcover_prepared <- prepare_landcover_continuity_area(landcover)
 
-Prepare continuity area
+continuity_prepared <- prepare_landcover_continuity_area(continuity)
+```
