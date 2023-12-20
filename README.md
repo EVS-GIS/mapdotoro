@@ -32,12 +32,12 @@ library(tidyr)
 library(lwgeom)
 library(qgisprocess)
 
-data(bassin_hydrographique)
-data(region_hydrographique)
-data(referentiel_hydro)
-data(swaths)
-data(talweg_metrics)
-data(landcover)
+bassin_hydrographique <- bassin_hydrographique
+region_hydrographique <- region_hydrographique
+referentiel_hydro <- referentiel_hydro
+swaths <- swaths
+talweg_metrics <- talweg_metrics
+landcover <- landcover
 ```
 
 set geometry column name
@@ -145,29 +145,32 @@ measurenetworkfromoutlet <- hydro_swaths_identified %>%
                        TO_NODE_FIELD = "NODEB")
 
 hydro_swaths_measured <- st_read(measurenetworkfromoutlet$OUTPUT) %>% 
-  st_zm()
-
-# st_write(hydro_swaths_measured, dsn = "data-raw/temp/hydro_swaths_measured.gpkg", layer = "hydro_swaths_measured", delete_dsn = TRUE)
+  st_zm() %>% 
+  select(-NODEA, -NODEB) %>% 
+  rename_with(tolower) %>% 
+  rename(measure_medial_axis = m,
+         measure_from_outlet = measure)
 ```
 
-Add talweg metrics to swaths
+prepare talweg metric
 
 ``` r
-swath_join_landcover <- cleaned_swaths %>% 
-  dplyr::inner_join(landcover, by = c("M"="measure", "AXIS"="axis"))
+talweg_metrics <- talweg_metrics %>% 
+  select(-swath)
 ```
 
-Add landcover to swaths
+Prepare landcover area
 
 ``` r
-landcover_prepared <- swath_join_landcover %>% 
-  sf::st_drop_geometry() %>%
-  dplyr::mutate(area_ha = area/10000) %>%  # convert m2 to ha
-  dplyr::select(id, label, area_ha) %>% 
-  tidyr::pivot_wider(names_from = label, values_from = area_ha) %>% 
-  rename_with(~stringr::str_replace_all(., " ", "_"), everything())%>%
+landcover_prepared <- landcover %>% 
+  mutate(area_ha = area/10000) %>%  # convert m2 to ha
+  select(label, side, area_ha, axis, measure) %>% 
+  pivot_wider(names_from = label, values_from = area_ha) %>% 
+  rename_with(~stringr::str_replace_all(., " ", "_"), everything()) %>% 
   mutate(sum_area = rowSums(select(., Crops, Dense_Urban, Diffuse_Urban,
                                               Forest, Grassland, Gravel_Bars,
                                               Infrastructures, Natural_Open,
                                               Water_Channel), na.rm = TRUE))
 ```
+
+Prepare continuity area
