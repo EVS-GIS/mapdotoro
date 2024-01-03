@@ -8,7 +8,7 @@
 #' @importFrom dplyr rename_all select
 #' @importFrom rmapshaper ms_simplify
 #' @importFrom DBI dbExistsTable dbExecute
-#' @importFrom sf st_write st_transform
+#' @importFrom sf st_write st_transform st_geometry
 #' @importFrom glue glue
 #'
 #' @return text
@@ -138,7 +138,7 @@ set_displayed_bassin_region <- function(table_name,
 #' @importFrom dplyr rename_all select
 #' @importFrom rmapshaper ms_simplify
 #' @importFrom DBI dbExistsTable dbExecute
-#' @importFrom sf st_write st_transform
+#' @importFrom sf st_write st_transform st_geometry
 #' @importFrom glue glue
 #'
 #' @return text
@@ -258,6 +258,108 @@ pg_export_region_hydrographique <- function(dataset = region_hydrographique,
   query <- glue::glue("
     ALTER TABLE {table_name}
     ADD COLUMN display bool;")
+  dbExecute(db_con, query)
+  cat(query, "\n")
+
+  return(glue::glue("{table_name} has been successfully set up"))
+}
+
+#' Export roe data to postgreslq table
+#'
+#' @param dataset roe sf data.frame.
+#' @param table_name roe table name.
+#' @param drop_existing_table if destination table remove with CASCADE.
+#' @param db_con database connection.
+#'
+#' @importFrom dplyr rename_all select
+#' @importFrom rmapshaper ms_simplify
+#' @importFrom DBI dbExistsTable dbExecute
+#' @importFrom sf st_write st_transform st_geometry
+#' @importFrom glue glue
+#'
+#' @return text
+#' @export
+pg_export_roe <- function(dataset = roe,
+                          table_name = "roe",
+                          drop_existing_table = FALSE,
+                          db_con){
+
+  st_geometry(dataset) <- "geom"
+
+  bassin_hydro <- dataset %>%
+    rename_all(clean_column_names) %>%
+    st_transform(crs = 4326)
+  table_exist <- dbExistsTable(db_con, table_name)
+  if (table_exist){
+    if (drop_existing_table){
+      query <- glue::glue("DROP TABLE {table_name} CASCADE")
+      dbExecute(db_con, query)
+      cat(glue::glue("{table_name} has been dropped from the database"), "\n")
+      st_write(bassin_hydro, db_con, table_name, driver = "PostgreSQL")
+      cat(glue::glue("{table_name} has been created"), "\n")
+    }else{
+      stop("Process stopped because the table exists and drop_existing_table is FALSE.")
+    }
+  } else {
+    st_write(bassin_hydro, db_con, table_name, driver = "PostgreSQL")
+    cat(glue::glue("{table_name} has been created"), "\n")
+  }
+
+  query <- glue::glue("
+    ALTER TABLE {table_name} ADD PRIMARY KEY (gid);")
+  dbExecute(db_con, query)
+  cat(query, "\n")
+
+  query <- glue::glue("
+    CREATE INDEX idx_gid_{table_name}
+    ON {table_name} USING btree(gid);")
+  dbExecute(db_con, query)
+  cat(query, "\n")
+
+  query <- glue::glue("
+    ALTER TABLE {table_name}
+    ADD CONSTRAINT unq_cdobstecou
+    UNIQUE (cdobstecou);")
+  dbExecute(db_con, query)
+  cat(query, "\n")
+
+  query <- glue::glue("
+    CREATE INDEX idx_cdobstecou
+    ON {table_name} USING btree(cdobstecou);")
+  dbExecute(db_con, query)
+  cat(query, "\n")
+
+  query <- glue::glue("
+    CREATE INDEX idx_geom_{table_name}
+    ON {table_name} USING GIST (geom);")
+  dbExecute(db_con, query)
+  cat(query, "\n")
+
+  query <- glue::glue("
+    ALTER TABLE {table_name}
+    ADD COLUMN gid_region integer;")
+  dbExecute(db_con, query)
+  cat(query, "\n")
+
+  query <- glue::glue("
+    UPDATE {table_name} AS nm
+    SET gid_region = rh.gid
+    FROM region_hydrographique AS rh
+    WHERE ST_Within(nm.geom, rh.geom);")
+  dbExecute(db_con, query)
+  cat(query, "\n")
+
+  query <- glue::glue("
+    ALTER TABLE {table_name}
+    ADD CONSTRAINT fk_{table_name}_gid_region
+    FOREIGN KEY(gid_region)
+    REFERENCES region_hydrographique(gid);")
+  dbExecute(db_con, query)
+  cat(query, "\n")
+
+  query <- glue::glue("
+    CREATE INDEX idx_gid_region_{table_name}
+    ON {table_name} USING btree(gid_region);")
   dbExecute(db_con, query)
   cat(query, "\n")
 

@@ -230,4 +230,9 @@ pg_export_region_hydrographique(dataset = region_hydrographique,
                                 db_con)
 set_displayed_bassin_region(table_name = "bassin_hydrographique",
                      displayed_gid = c(11, 16, 31, 33))
+
+pg_export_roe(dataset = roe,
+              table_name = "roe",
+              drop_existing_table = TRUE,
+              db_con)
 ```
