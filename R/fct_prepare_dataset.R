@@ -39,3 +39,22 @@ prepare_landcover_continuity_area <- function(dataset){
 
   return(landcover_prepared)
 }
+
+#' Format column names
+#'
+#' @param names the column names to format.
+#'
+#' @return A data frame with modified column names.
+#' @export
+#'
+#' @examples
+#' df <- data.frame("Column.1" = 1:3, "Column 2" = 4:6, "Column-3" = 7:9)
+#' df %>%
+#'   rename_all(clean_column_names)
+clean_column_names <- function(names) {
+  names %>%
+    tolower() %>%
+    gsub("\\.", "_", .) %>%
+    gsub(" ", "_", .) %>%
+    gsub("-", "_", .)
+}

@@ -31,8 +31,7 @@ devtools::install_github("EVS-GIS/mapdotoro")
 
 ## Workflow
 
-Testing dataset can be found
-
+Libraries
 ```{r, eval = FALSE}
 library(dplyr)
 library(sf)
@@ -41,7 +40,11 @@ library(mapdotoro)
 library(tidyr)
 library(lwgeom)
 library(qgisprocess)
+library(DBI)
+```
 
+Testing data
+```{r eval=FALSE}
 bassin_hydrographique <- bassin_hydrographique %>% 
   rename_with(tolower)
 region_hydrographique <- region_hydrographique %>% 
@@ -53,17 +56,31 @@ landcover <- landcover
 continuity <- continuity
 ```
 
-set geometry column name
-```{r, eval = FALSE}
-st_geometry(bassin_hydrographique) <- "geometry"
-st_geometry(region_hydrographique) <- "geometry"
-st_geometry(referentiel_hydro) <- "geometry"
-st_geometry(swaths) <- "geometry"
+```{r eval=FALSE}
+bassin_hydrographique <- st_read("./data-raw/raw-datasets/bassin_hydrographique.gpkg")
+region_hydrographique <- st_read("./data-raw/raw-datasets/region_hydrographique.gpkg")
 ```
 
 
-Map dataset
+set geometry column name
 ```{r, eval = FALSE}
+st_geometry(bassin_hydrographique) <- "geom"
+st_geometry(region_hydrographique) <- "geom"
+st_geometry(referentiel_hydro) <- "geom"
+st_geometry(swaths) <- "geom"
+```
+
+Check swaths
+```{r, eval=FALSE}
+swaths_valid <- swaths %>% 
+  dplyr::filter(VALUE == 2) # keep only valid swaths
+
+swaths_duplicated <- check_duplicate(swaths_valid)
+
+# check number of duplicate
+print(swaths_duplicated$duplicated_summary)
+
+# map duplicate
 tmap::tmap_mode("view")
 map <- tmap::tm_shape(bassin_hydrographique) +
   tmap::tm_polygons()+
@@ -71,6 +88,8 @@ tmap::tm_shape(region_hydrographique) +
   tmap::tm_polygons()+
 tmap::tm_shape(swaths) +
   tmap::tm_polygons()+
+tmap::tm_shape(swaths_duplicated$duplicated_rows) +
+  tmap::tm_polygons(col = "red")+
 tmap::tm_shape(referentiel_hydro) +
   tmap::tm_lines(col= "blue")
 map
@@ -78,21 +97,16 @@ map
 
 clean swaths
 ```{r, eval = FALSE}
-swaths_data <- swaths %>% 
-  dplyr::filter(VALUE == 2) # keep only valid swaths
-
-duplicated_swaths <- check_duplicate(swaths_data)
-cleaned_swaths <- clean_duplicated(dataset = swaths_data,
-                                   duplicated_dataset = duplicated_swaths)
-  # dplyr::mutate(id = row_number())
+swaths_cleaned <- clean_duplicated(dataset = swaths_valid,
+                                   duplicated_dataset = swaths_duplicated$duplicated_rows)
 ```
 
 clip referentiel hydro by swaths
 ```{r, eval = FALSE}
 hydro_swaths <- st_sf(st_sfc(crs = 2154)) # create an empty sf dataset
 # clip by axis
-for (axis in unique(cleaned_swaths$AXIS)){
-  swaths_axe <- cleaned_swaths %>%
+for (axis in unique(swaths_cleaned$AXIS)){
+  swaths_axe <- swaths_cleaned %>%
     filter(AXIS == axis) # get swaths by axis
   hydro_axe <- referentiel_hydro %>%
     filter(AXIS == axis) %>% # get streams by axis
@@ -112,36 +126,39 @@ for (axis in unique(cleaned_swaths$AXIS)){
 
 clean hydro_swaths
 ```{r, eval = FALSE}
-hydro_swaths_len <- hydro_swaths %>%
-  mutate(id = row_number()) %>% 
-  mutate(LENG = st_length(.))
+hydro_swaths <- hydro_swaths %>%
+  mutate(id = row_number()) %>% # create an unique id
+  mutate(LENG = st_length(.)) # add length in swath
   # mutate(M = ifelse(LENG < units::set_units(10, m), NA, M)) # length is unit object
 
-hydro_swaths_len_dupl <- check_duplicate(hydro_swaths_len)
+hydro_swaths_duplicated <- check_duplicate(hydro_swaths)
+hydro_swaths_duplicated$duplicated_rows
+hydro_swaths_duplicated$duplicated_summary
 
-hydro_swaths_len_dupl_corr <- st_sf(st_sfc(crs = 2154)) # create an empty sf dataset
-for (measure in unique(hydro_swaths_len_dupl$M)){
-  hydro_swaths_len_dupl_measure <- hydro_swaths_len_dupl %>% 
+hydro_swaths_prepared_clean <- st_sf(st_sfc(crs = 2154)) # create an empty sf dataset
+for (measure in unique(hydro_swaths_duplicated$duplicated_rows$M)){
+  duplicate_to_fix <- hydro_swaths_duplicated$duplicated_rows %>% 
     filter(M == measure) %>% 
-    filter(LENG < max(LENG)) %>% 
-    mutate(M = -1)
-  hydro_swaths_len_dupl_corr <- rbind(hydro_swaths_len_dupl_corr, hydro_swaths_len_dupl_measure)
+    filter(LENG < max(LENG)) %>% # we take the shortest lines
+    mutate(M = -1) # set the shortest line to -1
+  hydro_swaths_prepared_clean <- rbind(hydro_swaths_prepared_clean, duplicate_to_fix)
 }
 
-hydro_swaths_len_dupl_corr <- hydro_swaths_len_dupl_corr %>%
+hydro_swaths_prepared_clean <- hydro_swaths_prepared_clean %>%
   st_drop_geometry() %>% 
   select (id, M)
 
-merged_hydro_swaths <- merge(hydro_swaths_len, hydro_swaths_len_dupl_corr, by = "id", all.x = TRUE) %>% 
-  mutate(M.x = ifelse(!is.na(M.y) & M.y == -1, NA, M.x)) %>% 
+hydro_swaths_cleaned <- merge(hydro_swaths, hydro_swaths_prepared_clean, by = "id", all.x = TRUE) %>% 
+  mutate(M.x = ifelse(!is.na(M.y) & M.y == -1, NA, M.x)) %>% # the lines set to -1 are NA in hydro_swaths
   select(-M.y) %>% 
   rename("M" = M.x) %>% 
-  select(AXIS, M, DRAINAGE, geometry)
+  select(AXIS, M, DRAINAGE, geom)
+
 ```
 
 Measure network from outlet
 ```{r, eval = FALSE}
-identifynetworknodes <- merged_hydro_swaths %>% 
+identifynetworknodes <- hydro_swaths_cleaned %>% 
   qgis_run_algorithm_p("fct:identifynetworknodes",
                        QUANTIZATION = 100000000)
 
@@ -163,8 +180,8 @@ hydro_swaths_measured <- st_read(measurenetworkfromoutlet$OUTPUT) %>%
 ```
 prepare talweg metric
 ```{r, eval=FALSE}
-talweg_metrics <- talweg_metrics %>% 
-  select(-swath)
+talweg_metrics_prepared <- talweg_metrics %>%
+  rename("measure_medial_axis" = "measure")
 ```
 
 Prepare landcover and continuity area
@@ -174,8 +191,35 @@ landcover_prepared <- prepare_landcover_continuity_area(landcover)
 continuity_prepared <- prepare_landcover_continuity_area(continuity)
 ```
 
+Database connection
+```{r, eval=FALSE}
+db_con <- DBI::dbConnect(RPostgres::Postgres(),
+                        host = Sys.getenv("DBMAPDO_HOST_TEST"),
+                        port = Sys.getenv("DBMAPDO_PORT_TEST"),
+                        dbname = Sys.getenv("DBMAPDO_NAME_TEST"),
+                        user      = Sys.getenv("DBMAPDO_USER_TEST"),
+                        password  = Sys.getenv("DBMAPDO_PASS_TEST"))
+```
+
+Export tables
+```{r, eval=FALSE}
+# export bassin_hydrographique
 
 
+pg_export_bassin_hydrographique(dataset = bassin_hydrographique,
+                                table_name = "bassin_hydrographique",
+                                drop_existing_table = TRUE,
+                                db_con)
+set_displayed_bassin_region(table_name = "bassin_hydrographique",
+                     display_gid = c(6))
+
+pg_export_region_hydrographique(dataset = region_hydrographique,
+                                table_name = "region_hydrographique",
+                                drop_existing_table = TRUE,
+                                db_con)
+set_displayed_bassin_region(table_name = "bassin_hydrographique",
+                     display_gid = c(11, 16, 31, 33))
+```
 
 
 

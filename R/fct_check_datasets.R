@@ -8,7 +8,7 @@
 #' @importFrom dplyr filter
 #' @importFrom sf st_sf st_drop_geometry
 #'
-#' @return sf data.frame with all duplicated rows.
+#' @return a list with a sf data.frame with all duplicated rows and a data.frame with the number of duplicated by axis.
 #' @export
 #'
 #' @examples
@@ -18,20 +18,26 @@ check_duplicate <- function(dataset,
                             measure_field = "M"){
 
   duplicated_rows <- dataset[0, ]
+  duplicated_summary <- data.frame()
   # check for duplicate in M field for each axis
   for (axis in unique(dataset[[axis_field]])){
     net_axe <- dataset %>%
-      dplyr::filter(.data[[axis_field]]==axis)
-    # check for duplicate but exclude NA value in measure_field
-    if (any(duplicated(net_axe[[measure_field]][complete.cases(net_axe[[measure_field]])])) ==TRUE){
+      dplyr::filter(.data[[axis_field]]==axis & !is.na(.data[[measure_field]])) # !is.na to not set NA as duplicate in the axis
+    if (any(duplicated(net_axe[[measure_field]])) ==TRUE){ # if duplicate identified
       duplicate <- glue::glue("L'axe {axis} a des doublons")
       message(duplicate)
+      # two duplicates indices set to return all the rows involved in duplicate and not return only the first/last one.
       duplicated_rows <- rbind(duplicated_rows, net_axe[duplicated(net_axe[[measure_field]]) |
                                                           duplicated(net_axe[[measure_field]], fromLast = TRUE), ])
+      # for summary we need only to have the number of duplicate measure for each axes, no need to count all the rows but just the first one.
+      duplicated_summary <- rbind(duplicated_summary, data.frame(
+        axis = axis,
+        num_duplicate = count(net_axe[duplicated(net_axe[[measure_field]]), ])$n
+      ))
     }
   }
 
-  return(duplicated_rows)
+  return(list(duplicated_rows = duplicated_rows, duplicated_summary = duplicated_summary))
 }
 
 #' Drop all the duplicated rows from a duplicated sf data.frame.
