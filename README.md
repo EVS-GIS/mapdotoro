@@ -41,6 +41,8 @@ bassin_hydrographique <- bassin_hydrographique %>%
   rename_with(tolower)
 region_hydrographique <- region_hydrographique %>% 
   rename_with(tolower)
+roe <- roe %>% 
+  rename_with(tolower)
 referentiel_hydro <- referentiel_hydro
 swaths <- swaths
 talweg_metrics <- talweg_metrics
@@ -48,18 +50,24 @@ landcover <- landcover
 continuity <- continuity
 ```
 
-``` r
-bassin_hydrographique <- st_read("./data-raw/raw-datasets/bassin_hydrographique.gpkg")
-region_hydrographique <- st_read("./data-raw/raw-datasets/region_hydrographique.gpkg")
-```
-
-set geometry column name
+Datasets from the Fluvial Corridor Toolbox
 
 ``` r
-st_geometry(bassin_hydrographique) <- "geom"
-st_geometry(region_hydrographique) <- "geom"
-st_geometry(referentiel_hydro) <- "geom"
-st_geometry(swaths) <- "geom"
+bassin_hydrographique <- st_read(dsn = file.path("data-raw", "raw-datasets",
+                                                 "bassin_hydrographique.gpkg"), 
+                                 layer = "bassin_hydrographique") %>% 
+  rename_with(tolower)
+region_hydrographique <- st_read(dsn = file.path("data-raw", "raw-datasets",
+                                                 "region_hydrographique.gpkg"), 
+                                 layer = "region_hydrographique") %>% 
+  rename_with(tolower)
+roe <- st_read(dsn = file.path("data-raw", "raw-datasets", "roe.gpkg"), layer = "roe") %>% 
+  rename_with(tolower)
+referentiel_hydro <- st_read(dsn = file.path("data-raw", "raw-datasets", "REFERENTIEL_HYDRO.shp"))
+swaths <- st_read(dsn = file.path("data-raw", "raw-datasets", "SWATHS_MEDIALAXIS.shp"))
+talweg_metrics <- readr::read_csv(file.path("data-raw", "raw-datasets", "TALWEG_METRICS.csv"))
+landcover <- readr::read_csv(file.path("data-raw", "raw-datasets", "WIDTH_LANDCOVER.csv"))
+continuity <- readr::read_csv(file.path("data-raw", "raw-datasets", "WIDTH_CONTINUITY.csv"))
 ```
 
 Check swaths
@@ -72,7 +80,11 @@ swaths_duplicated <- check_duplicate(swaths_valid)
 
 # check number of duplicate
 print(swaths_duplicated$duplicated_summary)
+```
 
+Display swaths and duplicated
+
+``` r
 # map duplicate
 tmap::tmap_mode("view")
 map <- tmap::tm_shape(bassin_hydrographique) +
@@ -147,7 +159,7 @@ hydro_swaths_cleaned <- merge(hydro_swaths, hydro_swaths_prepared_clean, by = "i
   mutate(M.x = ifelse(!is.na(M.y) & M.y == -1, NA, M.x)) %>% # the lines set to -1 are NA in hydro_swaths
   select(-M.y) %>% 
   rename("M" = M.x) %>% 
-  select(AXIS, M, DRAINAGE, geom)
+  select(AXIS, M, DRAINAGE, geometry)
 ```
 
 Measure network from outlet
@@ -210,12 +222,12 @@ pg_export_bassin_hydrographique(dataset = bassin_hydrographique,
                                 drop_existing_table = TRUE,
                                 db_con)
 set_displayed_bassin_region(table_name = "bassin_hydrographique",
-                     display_gid = c(6))
+                     displayed_gid = c(6))
 
 pg_export_region_hydrographique(dataset = region_hydrographique,
                                 table_name = "region_hydrographique",
                                 drop_existing_table = TRUE,
                                 db_con)
 set_displayed_bassin_region(table_name = "bassin_hydrographique",
-                     display_gid = c(11, 16, 31, 33))
+                     displayed_gid = c(11, 16, 31, 33))
 ```

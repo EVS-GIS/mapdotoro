@@ -18,6 +18,8 @@ pg_export_bassin_hydrographique <- function(dataset = bassin_hydrographique,
                                             drop_existing_table = FALSE,
                                             db_con){
 
+  st_geometry(dataset) <- "geom"
+
   bassin_hydro <- dataset %>%
     rename_all(clean_column_names) %>%
     st_transform(crs = 4326) %>%
@@ -123,7 +125,7 @@ set_displayed_bassin_region <- function(table_name,
     stop(glue::glue("{table_name} not existing in database."))
   }
 
-  return(glue::glue("{table_name} display column set"))
+  return(glue::glue("{table_name} display column set up"))
 }
 
 #' Export region_hydrographique data to postgreslq table
@@ -145,6 +147,8 @@ pg_export_region_hydrographique <- function(dataset = region_hydrographique,
                                             table_name = "region_hydrographique",
                                             drop_existing_table = FALSE,
                                             db_con){
+
+  st_geometry(dataset) <- "geom"
 
   bassin_hydro <- dataset %>%
     rename_all(clean_column_names) %>%
@@ -230,12 +234,6 @@ pg_export_region_hydrographique <- function(dataset = region_hydrographique,
   query <- glue::glue("
     UPDATE {table_name}
     SET geom = ST_Force2D(geom);")
-  dbExecute(db_con, query)
-  cat(query, "\n")
-
-  query <- glue::glue("
-    CREATE INDEX idx_geom_{table_name}
-    ON {table_name} USING GIST (geom);")
   dbExecute(db_con, query)
   cat(query, "\n")
 
