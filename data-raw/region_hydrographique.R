@@ -1,6 +1,6 @@
 ## code to prepare `region_hydrographique` dataset goes here
 
-region_hydrographique <- sf::st_read(dsn = file.path("data-raw", "raw-datasets", "region_hydrographique.gpkg"), layer = "region_hydrographique") %>%
+region_hydrographique <- sf::st_read(dsn = file.path("data-raw", "raw-datasets", "region_hydrographique.gpkg")) %>%
   dplyr::filter(LbRegionHy %in% "L'Isère")
 
 usethis::use_data(region_hydrographique, overwrite = TRUE)

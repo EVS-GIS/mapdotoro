@@ -1,6 +1,6 @@
 ## code to prepare `roe` dataset goes here
 
-roe <- sf::st_read(dsn = file.path("data-raw", "raw-datasets", "roe.gpkg"), layer = "roe") %>%
+roe <- sf::st_read(dsn = file.path("data-raw", "raw-datasets", "roe.gpkg")) %>%
   dplyr::slice(1:10)
 
 

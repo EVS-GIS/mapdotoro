@@ -8,7 +8,9 @@ pg_export_roe(
   dataset = roe,
   table_name = "roe",
   drop_existing_table = FALSE,
-  db_con
+  db_con,
+  region_hydrographique_file_path = file.path("data-raw", "raw-datasets",
+    "region_hydrographique.gpkg")
 )
 }
 \arguments{
@@ -19,6 +21,8 @@ pg_export_roe(
 \item{drop_existing_table}{if destination table remove with CASCADE.}
 
 \item{db_con}{database connection.}
+
+\item{region_hydrographique_file_path}{file path to region hydrographique dataset.}
 }
 \value{
 text

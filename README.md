@@ -21,7 +21,7 @@ devtools::install_github("EVS-GIS/mapdotoro")
 
 ## Workflow
 
-Libraries
+### Libraries
 
 ``` r
 library(dplyr)
@@ -34,7 +34,7 @@ library(qgisprocess)
 library(DBI)
 ```
 
-Testing data
+### Testing data
 
 ``` r
 bassin_hydrographique <- bassin_hydrographique %>% 
@@ -50,18 +50,16 @@ landcover <- landcover
 continuity <- continuity
 ```
 
-Datasets from the Fluvial Corridor Toolbox
+### Datasets from the Fluvial Corridor Toolbox
 
 ``` r
 bassin_hydrographique <- st_read(dsn = file.path("data-raw", "raw-datasets",
-                                                 "bassin_hydrographique.gpkg"), 
-                                 layer = "bassin_hydrographique") %>% 
+                                                 "bassin_hydrographique.gpkg")) %>% 
   rename_with(tolower)
 region_hydrographique <- st_read(dsn = file.path("data-raw", "raw-datasets",
-                                                 "region_hydrographique.gpkg"), 
-                                 layer = "region_hydrographique") %>% 
+                                                 "region_hydrographique.gpkg")) %>% 
   rename_with(tolower)
-roe <- st_read(dsn = file.path("data-raw", "raw-datasets", "roe.gpkg"), layer = "roe") %>% 
+roe <- st_read(dsn = file.path("data-raw", "raw-datasets", "roe.gpkg")) %>% 
   rename_with(tolower)
 referentiel_hydro <- st_read(dsn = file.path("data-raw", "raw-datasets", "REFERENTIEL_HYDRO.shp"))
 swaths <- st_read(dsn = file.path("data-raw", "raw-datasets", "SWATHS_MEDIALAXIS.shp"))
@@ -70,7 +68,7 @@ landcover <- readr::read_csv(file.path("data-raw", "raw-datasets", "WIDTH_LANDCO
 continuity <- readr::read_csv(file.path("data-raw", "raw-datasets", "WIDTH_CONTINUITY.csv"))
 ```
 
-Check swaths
+### Check swaths
 
 ``` r
 swaths_valid <- swaths %>% 
@@ -82,7 +80,7 @@ swaths_duplicated <- check_duplicate(swaths_valid)
 print(swaths_duplicated$duplicated_summary)
 ```
 
-Display swaths and duplicated
+### Display swaths and duplicated
 
 ``` r
 # map duplicate
@@ -100,14 +98,14 @@ tmap::tm_shape(referentiel_hydro) +
 map
 ```
 
-clean swaths
+### Clean swaths
 
 ``` r
 swaths_cleaned <- clean_duplicated(dataset = swaths_valid,
                                    duplicated_dataset = swaths_duplicated$duplicated_rows)
 ```
 
-clip referentiel hydro by swaths
+### Clip referentiel hydro by swaths
 
 ``` r
 hydro_swaths <- st_sf(st_sfc(crs = 2154)) # create an empty sf dataset
@@ -130,7 +128,7 @@ for (axis in unique(swaths_cleaned$AXIS)){
 }
 ```
 
-clean hydro_swaths
+### Clean hydro_swaths
 
 ``` r
 hydro_swaths <- hydro_swaths %>%
@@ -162,7 +160,7 @@ hydro_swaths_cleaned <- merge(hydro_swaths, hydro_swaths_prepared_clean, by = "i
   select(AXIS, M, DRAINAGE, geometry)
 ```
 
-Measure network from outlet
+### Measure network from outlet
 
 ``` r
 identifynetworknodes <- hydro_swaths_cleaned %>% 
@@ -185,14 +183,14 @@ hydro_swaths_measured <- st_read(measurenetworkfromoutlet$OUTPUT) %>%
          measure_from_outlet = measure)
 ```
 
-prepare talweg metric
+### Prepare talweg metric
 
 ``` r
 talweg_metrics_prepared <- talweg_metrics %>%
   rename("measure_medial_axis" = "measure")
 ```
 
-Prepare landcover and continuity area
+### Prepare landcover and continuity area
 
 ``` r
 landcover_prepared <- prepare_landcover_continuity_area(landcover)
@@ -200,7 +198,7 @@ landcover_prepared <- prepare_landcover_continuity_area(landcover)
 continuity_prepared <- prepare_landcover_continuity_area(continuity)
 ```
 
-Database connection
+### Database connection
 
 ``` r
 db_con <- DBI::dbConnect(RPostgres::Postgres(),
@@ -211,7 +209,7 @@ db_con <- DBI::dbConnect(RPostgres::Postgres(),
                         password  = Sys.getenv("DBMAPDO_PASS_TEST"))
 ```
 
-Export tables
+### Export tables
 
 ``` r
 # export bassin_hydrographique
@@ -220,19 +218,38 @@ Export tables
 pg_export_bassin_hydrographique(dataset = bassin_hydrographique,
                                 table_name = "bassin_hydrographique",
                                 drop_existing_table = TRUE,
-                                db_con)
+                                db_con = db_con)
 set_displayed_bassin_region(table_name = "bassin_hydrographique",
                      displayed_gid = c(6))
 
 pg_export_region_hydrographique(dataset = region_hydrographique,
                                 table_name = "region_hydrographique",
                                 drop_existing_table = TRUE,
-                                db_con)
+                                db_con = db_con)
 set_displayed_bassin_region(table_name = "bassin_hydrographique",
                      displayed_gid = c(11, 16, 31, 33))
 
 pg_export_roe(dataset = roe,
               table_name = "roe",
               drop_existing_table = TRUE,
-              db_con)
+              db_con = db_con,
+              region_hydrographique_file_path = file.path("data-raw",
+                                                          "raw-datasets",
+                                                          "region_hydrographique.gpkg"))
+
+pg_export_hubeau(url = "https://hubeau.eaufrance.fr/api/v1/ecoulement/stations?format=json",
+                 table_name = "hydro_stations",
+                 drop_existing_table = TRUE,
+                 db_con = db_con,
+                 region_hydrographique_file_path = file.path("data-raw",
+                                                             "raw-datasets",
+                                                             "region_hydrographique.gpkg"))
+
+pg_export_hydro_swaths(dataset = hydro_swaths_measured,
+                       table_name = "hydro_swaths",
+                       drop_existing_table = TRUE,
+                       db_con = db_con,
+                       region_hydrographique_file_path = file.path("data-raw",
+                                                                   "raw-datasets",
+                                                                   "region_hydrographique.gpkg"))
 ```
