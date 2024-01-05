@@ -183,6 +183,15 @@ hydro_swaths_measured <- st_read(measurenetworkfromoutlet$OUTPUT) %>%
          measure_from_outlet = measure)
 ```
 
+### Prepare hydro_axis
+
+``` r
+hydro_axis <- hydro_swaths_measured %>%
+  group_by(axis) %>%
+  summarise(length = sum(length),
+            geom = st_union(geom))
+```
+
 ### Prepare talweg metric
 
 ``` r
@@ -252,4 +261,12 @@ pg_export_hydro_swaths(dataset = hydro_swaths_measured,
                        region_hydrographique_file_path = file.path("data-raw",
                                                                    "raw-datasets",
                                                                    "region_hydrographique.gpkg"))
+
+pg_export_hydro_axis(dataset = hydro_axis,
+                     table_name = "hydro_axis",
+                     drop_existing_table = TRUE,
+                     db_con = db_con,
+                     region_hydrographique_file_path = file.path("data-raw",
+                                                                 "raw-datasets",
+                                                                 "region_hydrographique.gpkg"))
 ```
