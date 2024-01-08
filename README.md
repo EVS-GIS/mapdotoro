@@ -119,7 +119,7 @@ for (axis in unique(swaths_cleaned$AXIS)){
     st_combine() %>% 
     st_sf() %>% 
     st_line_merge()
-  hydro_swaths_axis <- hydro_axe %>% 
+  hydro_swaths_axis <- hydro_axe %>% # split referentiel hydro
     st_split(swaths_axe) %>%
     st_collection_extract("LINESTRING") %>%
     st_join(swaths_axe, join = st_within) %>% 
@@ -175,9 +175,22 @@ measurenetworkfromoutlet <- hydro_swaths_identified %>%
                        FROM_NODE_FIELD = "NODEA",
                        TO_NODE_FIELD = "NODEB")
 
-hydro_swaths_measured <- st_read(measurenetworkfromoutlet$OUTPUT) %>% 
+hydro_swaths_hack <- st_read(measurenetworkfromoutlet$OUTPUT) %>% 
+  qgis_run_algorithm_p("fct:hackorder",
+                       FROM_NODE_FIELD = "NODEA",
+                       TO_NODE_FIELD = "NODEB",
+                       IS_DOWNSTREAM_MEAS = TRUE, 
+                       MEASURE_FIELD = "MEASURE")
+
+hydro_swaths_strahler <- st_read(hydro_swaths_hack$OUTPUT) %>% 
+  qgis_run_algorithm_p("fct:strahlerorder",
+                       AXIS_FIELD = "HACK",
+                       FROM_NODE_FIELD = "NODEA",
+                       TO_NODE_FIELD = "NODEB")
+
+hydro_swaths_measured <- st_read(hydro_swaths_strahler$OUTPUT) %>% 
   st_zm() %>% 
-  select(-NODEA, -NODEB) %>% 
+  select(-NODEA, -NODEB, -LAXIS) %>% 
   rename_with(tolower) %>% 
   rename(measure_medial_axis = m,
          measure_from_outlet = measure)
@@ -186,16 +199,27 @@ hydro_swaths_measured <- st_read(measurenetworkfromoutlet$OUTPUT) %>%
 ### Prepare hydro_axis
 
 ``` r
+# prepare referentiel hydro to join with axis sf data.frame and get TOPONYME
+referentiel_hydro_no_geom <- referentiel_hydro %>%
+  st_drop_geometry() %>%
+  group_by(AXIS) %>% 
+  select(AXIS, TOPONYME)
+
+# hydro_axis preparation
 hydro_axis <- hydro_swaths_measured %>%
   group_by(axis) %>%
   summarise(length = sum(length),
-            geom = st_union(geom))
+            geom = st_union(geom)) %>% # union geom and recalculate length
+  left_join(referentiel_hydro_no_geom, by = c("axis" = "AXIS"), multiple = "first") %>% # add TOPONYME field
+  rename_with(tolower)
 ```
 
 ### Prepare talweg metric
 
 ``` r
-talweg_metrics_prepared <- talweg_metrics %>%
+talweg_metrics_duplicated <- check_duplicate(talweg_metrics, axis_field = "axis",measure_field = "measure")
+
+talweg_metrics_prepared <- clean_duplicated(dataset = talweg_metrics, duplicated_dataset = talweg_metrics_duplicated$duplicated_rows, axis_field = "axis", measure_field = "measure") %>% 
   rename("measure_medial_axis" = "measure")
 ```
 
@@ -254,13 +278,12 @@ pg_export_hubeau(url = "https://hubeau.eaufrance.fr/api/v1/ecoulement/stations?f
                                                              "raw-datasets",
                                                              "region_hydrographique.gpkg"))
 
-pg_export_hydro_swaths(dataset = hydro_swaths_measured,
-                       table_name = "hydro_swaths",
-                       drop_existing_table = TRUE,
-                       db_con = db_con,
-                       region_hydrographique_file_path = file.path("data-raw",
-                                                                   "raw-datasets",
-                                                                   "region_hydrographique.gpkg"))
+
+
+pg_export_talweg_metrics(dataset = talweg_metrics_prepared,
+                     table_name = "talweg_metrics",
+                     drop_existing_table = TRUE,
+                     db_con = db_con)
 
 pg_export_hydro_axis(dataset = hydro_axis,
                      table_name = "hydro_axis",
@@ -269,4 +292,12 @@ pg_export_hydro_axis(dataset = hydro_axis,
                      region_hydrographique_file_path = file.path("data-raw",
                                                                  "raw-datasets",
                                                                  "region_hydrographique.gpkg"))
+
+pg_export_hydro_swaths(dataset = hydro_swaths_measured,
+                       table_name = "hydro_swaths",
+                       drop_existing_table = TRUE,
+                       db_con = db_con,
+                       region_hydrographique_file_path = file.path("data-raw",
+                                                                   "raw-datasets",
+                                                                   "region_hydrographique.gpkg"))
 ```

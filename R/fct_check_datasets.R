@@ -19,19 +19,19 @@ check_duplicate <- function(dataset,
 
   duplicated_rows <- dataset[0, ]
   duplicated_summary <- data.frame()
-  # check for duplicate in M field for each axis
-  for (axis in unique(dataset[[axis_field]])){
+  # check for duplicate in M field for each axis_selected
+  for (axis_selected in unique(dataset[[axis_field]])){
     net_axe <- dataset %>%
-      dplyr::filter(.data[[axis_field]]==axis & !is.na(.data[[measure_field]])) # !is.na to not set NA as duplicate in the axis
+      dplyr::filter(.data[[axis_field]]==axis_selected & !is.na(.data[[measure_field]])) # !is.na to not set NA as duplicate in the axis
     if (any(duplicated(net_axe[[measure_field]])) ==TRUE){ # if duplicate identified
-      duplicate <- glue::glue("L'axe {axis} a des doublons")
+      duplicate <- glue::glue("L'axe {axis_selected} a des doublons")
       message(duplicate)
       # two duplicates indices set to return all the rows involved in duplicate and not return only the first/last one.
       duplicated_rows <- rbind(duplicated_rows, net_axe[duplicated(net_axe[[measure_field]]) |
                                                           duplicated(net_axe[[measure_field]], fromLast = TRUE), ])
       # for summary we need only to have the number of duplicate measure for each axes, no need to count all the rows but just the first one.
       duplicated_summary <- rbind(duplicated_summary, data.frame(
-        axis = axis,
+        axis = axis_selected,
         num_duplicate = count(net_axe[duplicated(net_axe[[measure_field]]), ])$n
       ))
     }
