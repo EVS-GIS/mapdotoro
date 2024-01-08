@@ -223,11 +223,26 @@ talweg_metrics_prepared <- clean_duplicated(dataset = talweg_metrics, duplicated
   rename("measure_medial_axis" = "measure")
 ```
 
-### Prepare landcover and continuity area
+### Prepare landcover
 
 ``` r
 landcover_prepared <- prepare_landcover_continuity_area(landcover)
 
+# check for duplicate (should not print red L'axe axe_number a des doublons !)
+landcover_prepared_left <- landcover_prepared %>% 
+  filter(side == "left")
+
+landcover_duplicated <- check_duplicate(dataset = landcover_prepared_left, axis_field = "axis", measure_field = "measure_medial_axis")
+
+landcover_prepared_right <- landcover_prepared %>% 
+  filter(side == "right")
+
+landcover_duplicated <- check_duplicate(dataset = landcover_prepared_right, axis_field = "axis", measure_field = "measure_medial_axis")
+```
+
+### Prepare continuity area
+
+``` r
 continuity_prepared <- prepare_landcover_continuity_area(continuity)
 ```
 
@@ -278,8 +293,6 @@ pg_export_hubeau(url = "https://hubeau.eaufrance.fr/api/v1/ecoulement/stations?f
                                                              "raw-datasets",
                                                              "region_hydrographique.gpkg"))
 
-
-
 pg_export_talweg_metrics(dataset = talweg_metrics_prepared,
                      table_name = "talweg_metrics",
                      drop_existing_table = TRUE,
@@ -300,4 +313,10 @@ pg_export_hydro_swaths(dataset = hydro_swaths_measured,
                        region_hydrographique_file_path = file.path("data-raw",
                                                                    "raw-datasets",
                                                                    "region_hydrographique.gpkg"))
+```
+
+### Create view for mapdoapp
+
+``` r
+network_metrics_view(db_con = db_con)
 ```
