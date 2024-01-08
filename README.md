@@ -223,21 +223,38 @@ talweg_metrics_prepared <- clean_duplicated(dataset = talweg_metrics, duplicated
   rename("measure_medial_axis" = "measure")
 ```
 
-### Prepare landcover
+### Prepare landcover area
 
 ``` r
-landcover_prepared <- prepare_landcover_continuity_area(landcover)
+landcover_area_prepared <- prepare_landcover_continuity_area(landcover)
 
 # check for duplicate (should not print red L'axe axe_number a des doublons !)
-landcover_prepared_left <- landcover_prepared %>% 
+landcover_area_prepared_left <- landcover_area_prepared %>% 
   filter(side == "left")
 
-landcover_duplicated <- check_duplicate(dataset = landcover_prepared_left, axis_field = "axis", measure_field = "measure_medial_axis")
+landcover_area_duplicated_left <- check_duplicate(dataset = landcover_area_prepared_left, axis_field = "axis", measure_field = "measure_medial_axis")
 
-landcover_prepared_right <- landcover_prepared %>% 
+landcover_area_prepared_right <- landcover_area_prepared %>% 
   filter(side == "right")
 
-landcover_duplicated <- check_duplicate(dataset = landcover_prepared_right, axis_field = "axis", measure_field = "measure_medial_axis")
+landcover_area_duplicated_right <- check_duplicate(dataset = landcover_area_prepared_right, axis_field = "axis", measure_field = "measure_medial_axis")
+```
+
+### Prepare landcover width
+
+``` r
+landcover_width_prepared <- prepare_landcover_continuity_width(landcover)
+
+# check for duplicate (should not print red L'axe axe_number a des doublons !)
+landcover_width_prepared_left <- landcover_width_prepared %>% 
+  filter(side == "left")
+
+landcover_width_duplicated_left <- check_duplicate(dataset = landcover_width_prepared_left, axis_field = "axis", measure_field = "measure_medial_axis")
+
+landcover_width_prepared_right <- landcover_width_prepared %>% 
+  filter(side == "right")
+
+landcover_width_duplicated_right <- check_duplicate(dataset = landcover_width_prepared_right, axis_field = "axis", measure_field = "measure_medial_axis")
 ```
 
 ### Prepare continuity area
@@ -295,6 +312,11 @@ pg_export_hubeau(url = "https://hubeau.eaufrance.fr/api/v1/ecoulement/stations?f
 
 pg_export_talweg_metrics(dataset = talweg_metrics_prepared,
                      table_name = "talweg_metrics",
+                     drop_existing_table = TRUE,
+                     db_con = db_con)
+
+pg_export_landcover_area(dataset = landcover_area_prepared,
+                     table_name = "landcover_area",
                      drop_existing_table = TRUE,
                      db_con = db_con)
 
