@@ -240,27 +240,21 @@ landcover_area_prepared_right <- landcover_area_prepared %>%
 landcover_area_duplicated_right <- check_duplicate(dataset = landcover_area_prepared_right, axis_field = "axis", measure_field = "measure_medial_axis")
 ```
 
-### Prepare landcover width
-
-``` r
-landcover_width_prepared <- prepare_landcover_continuity_width(landcover)
-
-# check for duplicate (should not print red L'axe axe_number a des doublons !)
-landcover_width_prepared_left <- landcover_width_prepared %>% 
-  filter(side == "left")
-
-landcover_width_duplicated_left <- check_duplicate(dataset = landcover_width_prepared_left, axis_field = "axis", measure_field = "measure_medial_axis")
-
-landcover_width_prepared_right <- landcover_width_prepared %>% 
-  filter(side == "right")
-
-landcover_width_duplicated_right <- check_duplicate(dataset = landcover_width_prepared_right, axis_field = "axis", measure_field = "measure_medial_axis")
-```
-
 ### Prepare continuity area
 
 ``` r
-continuity_prepared <- prepare_landcover_continuity_area(continuity)
+continuity_area_prepared <- prepare_landcover_continuity_area(continuity)
+
+# check for duplicate (should not print red L'axe axe_number a des doublons !)
+continuity_area_prepared_left <- continuity_area_prepared %>% 
+  filter(side == "left")
+
+continuity_area_duplicated_left <- check_duplicate(dataset = continuity_area_prepared_left, axis_field = "axis", measure_field = "measure_medial_axis")
+
+continuity_area_prepared_right <- continuity_area_prepared %>% 
+  filter(side == "right")
+
+continuity_area_duplicated_right <- check_duplicate(dataset = continuity_area_prepared_right, axis_field = "axis", measure_field = "measure_medial_axis")
 ```
 
 ### Database connection
@@ -315,11 +309,6 @@ pg_export_talweg_metrics(dataset = talweg_metrics_prepared,
                      drop_existing_table = TRUE,
                      db_con = db_con)
 
-pg_export_landcover_area(dataset = landcover_area_prepared,
-                     table_name = "landcover_area",
-                     drop_existing_table = TRUE,
-                     db_con = db_con)
-
 pg_export_hydro_axis(dataset = hydro_axis,
                      table_name = "hydro_axis",
                      drop_existing_table = TRUE,
@@ -335,10 +324,24 @@ pg_export_hydro_swaths(dataset = hydro_swaths_measured,
                        region_hydrographique_file_path = file.path("data-raw",
                                                                    "raw-datasets",
                                                                    "region_hydrographique.gpkg"))
+
+pg_export_landcover_area(dataset = landcover_area_prepared,
+                     table_name = "landcover_area",
+                     drop_existing_table = TRUE,
+                     db_con = db_con)
+
+pg_export_continuity_area(dataset = continuity_area_prepared,
+                     table_name = "continuity_area",
+                     drop_existing_table = TRUE,
+                     db_con = db_con)
 ```
 
 ### Create view for mapdoapp
 
 ``` r
-network_metrics_view(db_con = db_con)
+network_metrics_view(db_con = db_con, view_name = "network_metrics")
+
+landcover_full_side_view(db_con = db_con, view_name = "landcover_area_full_side")
+
+continuity_full_side_view(db_con = db_con, view_name = "continuity_area_full_side")
 ```
