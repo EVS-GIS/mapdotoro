@@ -2,7 +2,7 @@
 % Please edit documentation in R/fct_bassin_hydrographique.R
 \name{create_table_bassin_hydrographique}
 \alias{create_table_bassin_hydrographique}
-\title{Create bassin_hydrographique table structure}
+\title{Create bassin_hydrographique table structure.}
 \usage{
 create_table_bassin_hydrographique(
   table_name = "bassin_hydrographique",
@@ -18,5 +18,5 @@ create_table_bassin_hydrographique(
 text
 }
 \description{
-Create bassin_hydrographique table structure
+Create bassin_hydrographique table structure.
 }
