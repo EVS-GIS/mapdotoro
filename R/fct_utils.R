@@ -1,3 +1,79 @@
+#' Set display column value for bassin or region table.
+#'
+#' @param table_name bassin or region table name.
+#' @param display_codes_bassin_or_region A vector with the list of cdbh for bassin, cdregionhy for region value to set the displayed polygons.
+#' @param db_con DBI connection to database.
+#' @param field_identifier text field identifier name to identified rows to remove.
+#'
+#' @importFrom glue glue
+#' @importFrom DBI dbExistsTable dbExecute
+#'
+#' @return text
+#' @export
+set_displayed_bassin_region <- function(table_name,
+                                        display_codes_bassin_or_region,
+                                        field_identifier,
+                                        db_con){
+
+  displayed <- paste0("('", paste(display_codes_bassin_or_region, collapse = "','"), "')")
+
+  table_exist <- dbExistsTable(db_con, table_name)
+
+  if (table_exist){
+    query <- glue::glue("
+    UPDATE {table_name}
+    SET display = TRUE
+    WHERE {field_identifier} in {displayed};")
+    dbExecute(db_con, query)
+
+    query <- glue::glue("
+    UPDATE {table_name}
+    SET display = FALSE
+    WHERE {field_identifier} not in {displayed}; ")
+    dbExecute(db_con, query)
+  } else {
+    stop(glue::glue("{table_name} not existing in database."))
+  }
+
+  return(glue::glue("{table_name} display column set up"))
+}
+
+#' Remove rows in database table based on field identifier.
+#'
+#' @param dataset sf data.frame dataset.
+#' @param field_identifier text field identifier name to identified rows to remove.
+#' @param table_name text database table name.
+#'
+#' @importFrom glue glue
+#' @importFrom DBI dbExecute
+#'
+#' @return text number of row deleted.
+#' @export
+remove_rows <- function(dataset,
+                        field_identifier,
+                        table_name){
+
+  field_identifier_value <- unique(dataset[[field_identifier]])
+
+  # rows to removed in database
+  if (length(field_identifier_value)>0){
+    if(is.character(field_identifier_value)){
+      rows_to_remove <- paste0("('", paste(field_identifier_value, collapse = "','"), "')")
+    }else{
+      rows_to_remove <- paste0("(", toString(field_identifier_value), ")")
+    }
+    # remove rows in table
+    query <- glue::glue("
+    DELETE FROM {table_name} WHERE {field_identifier} IN {rows_to_remove};")
+    deleted_rows <- dbExecute(db_con, query)
+
+  }else{
+    deleted_rows <- 0
+  }
+
+  return(cat("Row deleted :",toString(deleted_rows), "\n"))
+}
+
 #' Check for duplicate measure in streams axis.
 #'
 #' @param dataset sf data.frame.
@@ -68,5 +144,3 @@ clean_duplicated <- function(dataset,
   cleaned_dataset <- dplyr::anti_join(dataset, duplicated_rows, by = c(axis_field, measure_field))
   return(cleaned_dataset)
 }
-
-
