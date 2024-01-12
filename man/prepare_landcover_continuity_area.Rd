@@ -10,7 +10,7 @@ prepare_landcover_continuity_area(dataset)
 \item{dataset}{A landuse or continuity data.frame.}
 }
 \value{
-data.frame.
+data.frame
 }
 \description{
 Prepare landcover or continuity dataset to have area for each label

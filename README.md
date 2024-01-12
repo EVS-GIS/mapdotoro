@@ -53,19 +53,62 @@ continuity <- continuity
 ### Datasets from the Fluvial Corridor Toolbox
 
 ``` r
-bassin_hydrographique <- st_read(dsn = file.path("data-raw", "raw-datasets",
-                                                 "bassin_hydrographique.gpkg")) %>% 
-  rename_with(tolower)
-region_hydrographique <- st_read(dsn = file.path("data-raw", "raw-datasets",
-                                                 "region_hydrographique.gpkg")) %>% 
-  rename_with(tolower)
-roe <- st_read(dsn = file.path("data-raw", "raw-datasets", "roe.gpkg")) %>% 
-  rename_with(tolower)
+input_bassin_hydrographique <- st_read(dsn = file.path("data-raw", "raw-datasets",
+                                                 "bassin_hydrographique.gpkg"))
+
+input_region_hydrographique <- st_read(dsn = file.path("data-raw", "raw-datasets",
+                                                 "region_hydrographique.gpkg"))
+
+input_roe <- st_read(dsn = file.path("data-raw", "raw-datasets", "roe.gpkg"))
+
 referentiel_hydro <- st_read(dsn = file.path("data-raw", "raw-datasets", "REFERENTIEL_HYDRO.shp"))
 swaths <- st_read(dsn = file.path("data-raw", "raw-datasets", "SWATHS_MEDIALAXIS.shp"))
 talweg_metrics <- readr::read_csv(file.path("data-raw", "raw-datasets", "TALWEG_METRICS.csv"))
 landcover <- readr::read_csv(file.path("data-raw", "raw-datasets", "WIDTH_LANDCOVER.csv"))
 continuity <- readr::read_csv(file.path("data-raw", "raw-datasets", "WIDTH_CONTINUITY.csv"))
+```
+
+### Prepare bassin, region, ROE
+
+``` r
+bassin_hydrographique <- prepare_bassin_hydrographique(input_bassin_hydrographique)
+
+
+region_hydrographique <- prepare_region_hydrographique(input_region_hydrographique)
+set_displayed_bassin_region(table_name = "bassin_hydrographique",
+                            code_with_data = c("W"))
+
+
+roe <- prepare_roe(input_roe)
+```
+
+### Database connection
+
+``` r
+db_con <- DBI::dbConnect(RPostgres::Postgres(),
+                        host = Sys.getenv("DBMAPDO_HOST_TEST"),
+                        port = Sys.getenv("DBMAPDO_PORT_TEST"),
+                        dbname = Sys.getenv("DBMAPDO_NAME_TEST"),
+                        user      = Sys.getenv("DBMAPDO_USER_TEST"),
+                        password  = Sys.getenv("DBMAPDO_PASS_TEST"))
+```
+
+### Set database structure
+
+``` r
+create_table_bassin_hydrographique (table_name = "bassin_hydrographique",
+                                    db_con = db_con)
+```
+
+### Update and insert database
+
+``` r
+upsert_bassin_hydrographique(dataset = bassin_hydrographique,
+                             table_name = "bassin_hydrographique",
+                             db_con = db_con,
+                             field_identifier = "cdbh")
+set_displayed_bassin_region(table_name = "bassin_hydrographique", 
+                            code_with_data = c("06"))
 ```
 
 ### Check swaths
@@ -134,7 +177,6 @@ for (axis in unique(swaths_cleaned$AXIS)){
 hydro_swaths <- hydro_swaths %>%
   mutate(id = row_number()) %>% # create an unique id
   mutate(LENG = st_length(.)) # add length in swath
-  # mutate(M = ifelse(LENG < units::set_units(10, m), NA, M)) # length is unit object
 
 hydro_swaths_duplicated <- check_duplicate(hydro_swaths)
 hydro_swaths_duplicated$duplicated_rows
@@ -160,40 +202,57 @@ hydro_swaths_cleaned <- merge(hydro_swaths, hydro_swaths_prepared_clean, by = "i
   select(AXIS, M, DRAINAGE, geometry)
 ```
 
-### Measure network from outlet
+### hydro_swaths measure network from outlet and strahler
 
 ``` r
+# prepare network for measurenetworkfromoutlet
 identifynetworknodes <- hydro_swaths_cleaned %>% 
   qgis_run_algorithm_p("fct:identifynetworknodes",
                        QUANTIZATION = 100000000)
 
+# remove row when NODEA = NODEB (when distance is too short the node id is the same)
 hydro_swaths_identified <- st_read(identifynetworknodes$OUTPUT) %>% 
-  filter(NODEA != NODEB) # remove row when NODEA = NODEB (when distance is too short the node id is the same)
+  filter(NODEA != NODEB) 
 
+# create measure network from outlet field, measure = 0 from each axis beginning
 measurenetworkfromoutlet <- hydro_swaths_identified %>% 
   qgis_run_algorithm_p("fct:measurenetworkfromoutlet",
                        FROM_NODE_FIELD = "NODEA",
                        TO_NODE_FIELD = "NODEB")
 
-hydro_swaths_hack <- st_read(measurenetworkfromoutlet$OUTPUT) %>% 
-  qgis_run_algorithm_p("fct:hackorder",
-                       FROM_NODE_FIELD = "NODEA",
-                       TO_NODE_FIELD = "NODEB",
-                       IS_DOWNSTREAM_MEAS = TRUE, 
-                       MEASURE_FIELD = "MEASURE")
+# need interger fid and not numeric to perform QGIS spatial join
+referentiel_hydro$fid <- as.integer(referentiel_hydro$fid)
 
-hydro_swaths_strahler <- st_read(hydro_swaths_hack$OUTPUT) %>% 
-  qgis_run_algorithm_p("fct:strahlerorder",
-                       AXIS_FIELD = "HACK",
-                       FROM_NODE_FIELD = "NODEA",
-                       TO_NODE_FIELD = "NODEB")
-
-hydro_swaths_measured <- st_read(hydro_swaths_strahler$OUTPUT) %>% 
+# create small buffer before spatial join
+referentiel_hydro_buff <- referentiel_hydro %>% 
   st_zm() %>% 
-  select(-NODEA, -NODEB, -LAXIS) %>% 
-  rename_with(tolower) %>% 
+  st_buffer(dist = 1)
+
+# spatial join with QGIS working better than sf with biggest overlap
+hydro_swaths_strahler <- st_read(measurenetworkfromoutlet$OUTPUT) %>% 
+  qgis_run_algorithm_p("native:joinattributesbylocation",
+                       DISCARD_NONMATCHING = FALSE,
+                       JOIN = referentiel_hydro_buff,
+                       JOIN_FIELDS = "STRAHLER",
+                       METHOD = 2, # attribute with biggest overlap
+                       PREDICATE = 0, # intersect
+                       PREFIX = "")
+
+# format attributes
+hydro_swaths_prepared <- st_read(hydro_swaths_strahler$OUTPUT) %>% 
+  st_zm() %>% 
+  select(-NODEA, -NODEB) %>% 
+  rename_all(clean_column_names) %>% 
   rename(measure_medial_axis = m,
-         measure_from_outlet = measure)
+         measure_from_outlet = measure) %>% 
+  st_transform(crs = 4326) %>%
+    st_join(region_hydro, join = st_within) %>%
+    mutate(gid_region = gid) %>%
+    select(-colnames(region_hydro)[colnames(region_hydro) != "geom"])
+
+
+
+# st_write(obj = hydro_swaths_prepared, dsn = "./data-raw/temp/hydro_swaths_prepared.gpkg", layer = "hydro_swaths_prepared", delete_dsn = TRUE)
 ```
 
 ### Prepare hydro_axis
@@ -268,6 +327,86 @@ db_con <- DBI::dbConnect(RPostgres::Postgres(),
                         password  = Sys.getenv("DBMAPDO_PASS_TEST"))
 ```
 
+### Create database structure
+
+``` r
+create_table_bassin_hydrographique(table_name = "bassin_hydrographique")
+create_table_hydro_swaths(table_name = "hydro_swaths")
+```
+
+### update example
+
+``` r
+hydro_swaths_prepared_exemple <- hydro_swaths_prepared %>% 
+  slice_head(n=3)
+hydro_swaths_prepared_exemple[2, "length"] <- 999
+st_write(hydro_swaths_prepared_exemple, db_con, "hydro_swaths", driver = "PostgreSQL", append = TRUE)
+
+
+
+hydro_swaths_prepared_exemple2 <- hydro_swaths_prepared %>% 
+  slice_head(n=4)
+
+# Create fake data
+fake_data <- data.frame(
+  axis = c(2000788927, 2000788928, 2000788929, 2000788930, 2000788931),
+  measure_medial_axis = c(20000, 20500, 19800, 21000, 21500),
+  drainage = c(8.5, 8.2, 9.0, 8.8, 9.5),
+  measure_from_outlet = c(19500.12, 19800.45, 19350.78, 20500.32, 21000.21),
+  length = c(180.5, 195.2, 175.8, 200.3, 215.7),
+  strahler = c(2, 1, 2, 3, 1)
+)
+
+# Create fake geometries
+fake_geom <- st_sfc(
+  st_linestring(matrix(c(990000, 6523000, 990005, 6523010, 990010, 6523020, 990015, 6523030), ncol = 2)),
+  st_linestring(matrix(c(990020, 6523040, 990025, 6523050, 990030, 6523060, 990035, 6523070), ncol = 2)),
+  st_linestring(matrix(c(990040, 6523080, 990045, 6523090, 990050, 6523100, 990055, 6523110), ncol = 2)),
+  st_linestring(matrix(c(990060, 6523120, 990065, 6523130, 990070, 6523140, 990075, 6523150), ncol = 2)),
+  st_linestring(matrix(c(990080, 6523160, 990085, 6523170, 990090, 6523180, 990095, 6523190), ncol = 2))
+)
+
+# Create sf data frame
+fake_sf <- st_sf(
+  axis = fake_data$axis,
+  measure_medial_axis = fake_data$measure_medial_axis,
+  drainage = fake_data$drainage,
+  measure_from_outlet = fake_data$measure_from_outlet,
+  length = fake_data$length,
+  strahler = fake_data$strahler,
+  geom = fake_geom
+) %>% 
+  st_set_crs(2154)
+
+hydro_swaths_prepared_exemple3 <- rbind(hydro_swaths_prepared_exemple2, fake_sf)
+
+# hydro_swaths_table <- st_read(dsn = db_con, layer = "hydro_swaths") %>% 
+#   st_drop_geometry()
+# 
+# common_rows <- hydro_swaths_prepared_exemple3[hydro_swaths_prepared_exemple3$axis %in% hydro_swaths_table$axis, ]
+
+axis_list <- paste0("(", toString(unique(hydro_swaths_prepared_exemple3$axis)), ")")
+
+query <- glue::glue("DELETE FROM hydro_swaths WHERE axis IN {axis_list};")
+DBI::dbExecute(db_con, query)
+
+st_write(obj = hydro_swaths_prepared_exemple3, dsn = db_con, layer = "hydro_swaths", append = TRUE)
+
+upsert_hydro_swaths(dataset = hydro_swaths_prepared_exemple3, table_name = "hydro_swaths", db_con = db_con)
+```
+
+### Update existing values
+
+``` r
+pg_export_hydro_swaths(dataset = hydro_swaths_measured,
+                       table_name = "hydro_swaths",
+                       drop_existing_table = TRUE,
+                       db_con = db_con,
+                       region_hydrographique_file_path = file.path("data-raw",
+                                                                   "raw-datasets",
+                                                                   "region_hydrographique.gpkg"))
+```
+
 ### Export tables
 
 ``` r
@@ -278,6 +417,7 @@ pg_export_bassin_hydrographique(dataset = bassin_hydrographique,
                                 table_name = "bassin_hydrographique",
                                 drop_existing_table = TRUE,
                                 db_con = db_con)
+
 set_displayed_bassin_region(table_name = "bassin_hydrographique",
                      displayed_gid = c(6))
 

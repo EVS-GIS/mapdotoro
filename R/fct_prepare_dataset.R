@@ -1,3 +1,56 @@
+#' Prepare bassin_hydrographique dataset to database export.
+#'
+#' @param dataset bassin_hydrographique sf data.frame
+#'
+#' @return sf data.frame
+#' @export
+prepare_bassin_hydrographique <- function(dataset = input_bassin_hydrographique){
+
+  st_geometry(dataset) <- "geom" # in case if geometry column name is not "geom"
+
+  bassin <- dataset %>%
+    rename_all(clean_column_names) %>%
+    select(-gid)
+
+  return(bassin)
+}
+
+#' Prepare region_hydrographique dataset to database export.
+#'
+#' @param dataset region_hydrographique sf data.frame
+#'
+#' @return sf data.frame
+#' @export
+prepare_region_hydrographique <- function(dataset = input_region_hydrographique){
+
+  st_geometry(dataset) <- "geom" # in case if geometry column name is not "geom"
+
+  region <- dataset %>%
+    rename_all(clean_column_names) %>%
+    select(-gid)
+
+  return(region)
+}
+
+#' Prepare roe dataset to database export.
+#'
+#' @param dataset roe sf data.frame
+#'
+#' @return sf data.frame
+#' @export
+prepare_roe <- function(dataset = input_roe){
+
+  st_geometry(dataset) <- "geom" # in case if geometry column name is not "geom"
+
+  roe <- dataset %>%
+    rename_all(clean_column_names) %>%
+    select(-gid)
+
+  return(roe)
+}
+
+
+
 #' Prepare landcover or continuity dataset to have area for each label
 #'
 #' @param dataset A landuse or continuity data.frame.
@@ -7,7 +60,7 @@
 #' @importFrom stringr str_replace_all
 #' @importFrom tidyselect everything
 #'
-#' @return data.frame.
+#' @return data.frame
 #' @export
 #'
 #' @examples

@@ -1,30 +1,3 @@
-#' #' Write t
-#' #'
-#' #' @param table_name
-#' #' @param drop_existing_table
-#' #'
-#' #' @return
-#' #' @export
-#' #'
-#' #' @examples
-#' write_pgtable <- function(table_name,
-#'                           drop_existing_table){
-#'   table_exist <- dbExistsTable(db_con, table_name)
-#'   if (table_exist){
-#'     if (drop_existing_table){
-#'       query <- glue::glue("DROP TABLE {table_name} CASCADE")
-#'       dbExecute(db_con, query)
-#'       cat(glue::glue("{table_name} has been dropped from the database"), "\n")
-#'       st_write(bassin_hydro, db_con, table_name, driver = "PostgreSQL")
-#'     }else{
-#'       stop("Process stopped because the table exists and drop_existing_table is FALSE.")
-#'     }
-#'   } else {
-#'     st_write(bassin_hydro, db_con, table_name, driver = "PostgreSQL")
-#'   }
-#'   return(glue::glue("{table_name} has been successfully created"), "\n")
-#' }
-
 #' Export bassin_hydrographique data to postgreslq table
 #'
 #' @param dataset bassin_hydrographique sf data.frame.
@@ -46,11 +19,8 @@ pg_export_bassin_hydrographique <- function(dataset = bassin_hydrographique,
                                             db_con){
 
   bassin_hydro <- dataset %>%
-    rename_all(clean_column_names) %>%
     st_transform(crs = 4326) %>%
     ms_simplify(keep = 0.01, keep_shapes = TRUE, weighting = 0.5)
-
-  st_geometry(bassin_hydro) <- "geom" # in case if geometry column name is not "geom"
 
   table_exist <- dbExistsTable(db_con, table_name)
   if (table_exist){
@@ -110,16 +80,16 @@ pg_export_bassin_hydrographique <- function(dataset = bassin_hydrographique,
 #' Set display column value for bassin or region table.
 #'
 #' @param table_name bassin or region table name.
-#' @param display_gid_bassin A numeric vector with gid bassin value.
+#' @param code_bassin_with_data A vector with the list of cdbh value to set the displayed bassin.
 #'
 #' @importFrom DBI dbExistsTable dbExecute
 #'
 #' @return text
 #' @export
 set_displayed_bassin_region <- function(table_name,
-                                        displayed_gid){
+                                        code_bassin_with_data){
 
-  displayed_gid <- toString(displayed_gid)
+  displayed_gid <- toString(code_bassin_with_data)
 
   table_exist <- dbExistsTable(db_con, table_name)
 
@@ -127,14 +97,14 @@ set_displayed_bassin_region <- function(table_name,
     query <- glue::glue("
     UPDATE {table_name}
     SET display = TRUE
-    WHERE gid in ({displayed_gid});")
+    WHERE gid in ({code_bassin_with_data});")
     dbExecute(db_con, query)
     cat(query, "\n")
 
     query <- glue::glue("
     UPDATE {table_name}
     SET display = FALSE
-    WHERE gid not in ({displayed_gid}); ")
+    WHERE gid not in ({code_bassin_with_data}); ")
     dbExecute(db_con, query)
     cat(query, "\n")
   } else {
@@ -165,11 +135,8 @@ pg_export_region_hydrographique <- function(dataset = region_hydrographique,
                                             db_con){
 
   bassin_hydro <- dataset %>%
-    rename_all(clean_column_names) %>%
     st_transform(crs = 4326) %>%
     ms_simplify(keep = 0.01, keep_shapes = TRUE, weighting = 0.5)
-
-  st_geometry(bassin_hydro) <- "geom" # in case if geometry column name is not "geom"
 
   table_exist <- dbExistsTable(db_con, table_name)
   if (table_exist){

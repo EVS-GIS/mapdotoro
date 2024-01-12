@@ -2,33 +2,7 @@
 % Please edit documentation in R/fct_database.R
 \name{pg_export_bassin_hydrographique}
 \alias{pg_export_bassin_hydrographique}
-\title{#' Write t
-#'
-#' @param table_name
-#' @param drop_existing_table
-#'
-#' @return
-#' @export
-#'
-#' @examples
-write_pgtable <- function(table_name,
-drop_existing_table){
-table_exist <- dbExistsTable(db_con, table_name)
-if (table_exist){
-if (drop_existing_table){
-query <- glue::glue("DROP TABLE {table_name} CASCADE")
-dbExecute(db_con, query)
-cat(glue::glue("{table_name} has been dropped from the database"), "\n")
-st_write(bassin_hydro, db_con, table_name, driver = "PostgreSQL")
-}else{
-stop("Process stopped because the table exists and drop_existing_table is FALSE.")
-}
-} else {
-st_write(bassin_hydro, db_con, table_name, driver = "PostgreSQL")
-}
-return(glue::glue("{table_name} has been successfully created"), "\n")
-}
-Export bassin_hydrographique data to postgreslq table}
+\title{Export bassin_hydrographique data to postgreslq table}
 \usage{
 pg_export_bassin_hydrographique(
   dataset = bassin_hydrographique,
@@ -50,31 +24,5 @@ pg_export_bassin_hydrographique(
 text
 }
 \description{
-#' Write t
-#'
-#' @param table_name
-#' @param drop_existing_table
-#'
-#' @return
-#' @export
-#'
-#' @examples
-write_pgtable <- function(table_name,
-drop_existing_table){
-table_exist <- dbExistsTable(db_con, table_name)
-if (table_exist){
-if (drop_existing_table){
-query <- glue::glue("DROP TABLE {table_name} CASCADE")
-dbExecute(db_con, query)
-cat(glue::glue("{table_name} has been dropped from the database"), "\n")
-st_write(bassin_hydro, db_con, table_name, driver = "PostgreSQL")
-}else{
-stop("Process stopped because the table exists and drop_existing_table is FALSE.")
-}
-} else {
-st_write(bassin_hydro, db_con, table_name, driver = "PostgreSQL")
-}
-return(glue::glue("{table_name} has been successfully created"), "\n")
-}
 Export bassin_hydrographique data to postgreslq table
 }
