@@ -36,9 +36,10 @@ upsert_hydro_swaths <- function(dataset = hydro_swaths_prepared,
 #' @param db_con DBI connection to database.
 #' @param field_identifier text field identifier name to identified rows to remove.
 #'
-#' @importFrom sf st_write
+#' @importFrom sf st_write st_transform
 #' @importFrom DBI dbExecute
 #' @importFrom glue glue
+#' @importFrom rmapshaper ms_simplify
 #'
 #' @return text
 #' @export
@@ -52,7 +53,7 @@ upsert_bassin_hydrographique <- function(dataset = bassin_hydrographique,
     st_transform(crs = 4326) %>%
     ms_simplify(keep = 0.01, keep_shapes = TRUE, weighting = 0.5)
 
-  remove_rows(dataset = dataset,
+  remove_rows(dataset = bassin_hydro,
               field_identifier = field_identifier,
               table_name = table_name)
 
@@ -79,9 +80,10 @@ upsert_bassin_hydrographique <- function(dataset = bassin_hydrographique,
 #' @param table_name database table name.
 #' @param db_con DBI connection to database.
 #'
-#' @importFrom sf st_write
+#' @importFrom sf st_write st_cast st_zm st_transform
 #' @importFrom DBI dbExecute
 #' @importFrom glue glue
+#' @importFrom rmapshaper ms_simplify
 #'
 #' @return text
 #' @export
@@ -96,7 +98,7 @@ upsert_region_hydrographique <- function(dataset = region_hydrographique,
     st_cast("MULTIPOLYGON") %>%
     st_zm()
 
-  remove_rows(dataset = dataset,
+  remove_rows(dataset = region_hydro,
               field_identifier = field_identifier,
               table_name = table_name)
 
@@ -131,6 +133,52 @@ upsert_region_hydrographique <- function(dataset = region_hydrographique,
 
   return(glue::glue("{table_name} updated"))
 }
+
+#' Delete existing rows and insert roe to database
+#'
+#' @param dataset sf data.frame roe.
+#' @param table_name text database table name.
+#' @param db_con DBI connection to database.
+#' @param field_identifier text field identifier name to identified rows to remove.
+#'
+#' @importFrom sf st_write st_transform
+#' @importFrom DBI dbExecute
+#' @importFrom glue glue
+#'
+#' @return text
+#' @export
+upsert_roe <- function(dataset = roe,
+                       table_name = "roe",
+                       db_con,
+                       field_identifier = "cdobstecou"
+){
+
+  roe_data <- dataset %>%
+    st_transform(crs = 4326)
+
+  remove_rows(dataset = roe_data,
+              field_identifier = field_identifier,
+              table_name = table_name)
+
+  st_write(obj = roe_data, dsn = db_con, layer = table_name, append = TRUE)
+
+  return(glue::glue("{table_name} updated"))
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 #' Set display column value for bassin or region table.
 #'

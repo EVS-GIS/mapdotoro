@@ -73,12 +73,10 @@ continuity <- readr::read_csv(file.path("data-raw", "raw-datasets", "WIDTH_CONTI
 ``` r
 bassin_hydrographique <- prepare_bassin_hydrographique(input_bassin_hydrographique)
 
-
 region_hydrographique <- prepare_region_hydrographique(input_region_hydrographique)
 
-
-
-roe <- prepare_roe(input_roe)
+roe <- prepare_roe(input_roe,
+                   region_hydro = region_hydrographique)
 ```
 
 ### Database connection
@@ -99,6 +97,8 @@ create_table_bassin_hydrographique(table_name = "bassin_hydrographique",
                                     db_con = db_con)
 create_table_region_hydrographique(table_name = "region_hydrographique",
                                    db_con)
+create_table_roe(table_name = "roe",
+                 db_con = db_con)
 ```
 
 ### Update and insert database
@@ -121,6 +121,11 @@ set_displayed_bassin_region(table_name = "region_hydrographique",
                             display_codes_bassin_or_region = c("W"),
                             field_identifier = "cdregionhy",
                             db_con = db_con)
+
+upsert_roe(dataset = roe,
+           table_name = "roe", 
+           db_con = db_con, 
+           field_identifier = "cdobstecou")
 ```
 
 ### Check swaths

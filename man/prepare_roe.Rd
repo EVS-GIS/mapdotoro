@@ -4,10 +4,12 @@
 \alias{prepare_roe}
 \title{Prepare roe dataset to database export.}
 \usage{
-prepare_roe(dataset = input_roe)
+prepare_roe(dataset = input_roe, region_hydro = region_hydrographique)
 }
 \arguments{
-\item{dataset}{roe sf data.frame}
+\item{dataset}{sf data.frame roe.}
+
+\item{region_hydro}{sf data.frame hydrographic regions to set spatial join on gid_region.}
 }
 \value{
 sf data.frame

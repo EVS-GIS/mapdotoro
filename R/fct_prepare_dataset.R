@@ -2,6 +2,9 @@
 #'
 #' @param dataset bassin_hydrographique sf data.frame
 #'
+#' @importFrom sf st_geometry
+#' @importFrom dplyr select
+#'
 #' @return sf data.frame
 #' @export
 prepare_bassin_hydrographique <- function(dataset = input_bassin_hydrographique){
@@ -19,6 +22,9 @@ prepare_bassin_hydrographique <- function(dataset = input_bassin_hydrographique)
 #'
 #' @param dataset region_hydrographique sf data.frame
 #'
+#' @importFrom sf st_geometry
+#' @importFrom dplyr select
+#'
 #' @return sf data.frame
 #' @export
 prepare_region_hydrographique <- function(dataset = input_region_hydrographique){
@@ -34,17 +40,25 @@ prepare_region_hydrographique <- function(dataset = input_region_hydrographique)
 
 #' Prepare roe dataset to database export.
 #'
-#' @param dataset roe sf data.frame
+#' @param dataset sf data.frame roe.
+#' @param region_hydro sf data.frame hydrographic regions to set spatial join on gid_region.
+#'
+#' @importFrom dplyr select mutate
+#' @importFrom sf st_join st_geometry
 #'
 #' @return sf data.frame
 #' @export
-prepare_roe <- function(dataset = input_roe){
+prepare_roe <- function(dataset = input_roe,
+                        region_hydro = region_hydrographique){
 
   st_geometry(dataset) <- "geom" # in case if geometry column name is not "geom"
 
   roe <- dataset %>%
     rename_all(clean_column_names) %>%
-    select(-gid)
+    select(-gid) %>%
+    st_join(region_hydro, join = st_within) %>%
+    mutate(gid_region = gid) %>%
+    select(-colnames(region_hydro)[colnames(region_hydro) != "geom"])
 
   return(roe)
 }
