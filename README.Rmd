@@ -81,8 +81,7 @@ bassin_hydrographique <- prepare_bassin_hydrographique(input_bassin_hydrographiq
 
 
 region_hydrographique <- prepare_region_hydrographique(input_region_hydrographique)
-set_displayed_bassin_region(table_name = "bassin_hydrographique",
-                            code_with_data = c("W"))
+
 
 
 roe <- prepare_roe(input_roe)
@@ -102,9 +101,10 @@ db_con <- DBI::dbConnect(RPostgres::Postgres(),
 
 ### Set database structure
 ```{r, eval=FALSE}
-create_table_bassin_hydrographique (table_name = "bassin_hydrographique",
+create_table_bassin_hydrographique(table_name = "bassin_hydrographique",
                                     db_con = db_con)
-
+create_table_region_hydrographique(table_name = "region_hydrographique",
+                                   db_con)
 ```
 
 ### Update and insert database
@@ -113,9 +113,19 @@ upsert_bassin_hydrographique(dataset = bassin_hydrographique,
                              table_name = "bassin_hydrographique",
                              db_con = db_con,
                              field_identifier = "cdbh")
-set_displayed_bassin_region(table_name = "bassin_hydrographique", 
-                            code_with_data = c("06"))
+set_displayed_bassin_region(table_name = "bassin_hydrographique",
+                            display_codes_bassin_or_region = c("06"),
+                            field_identifier = "cdbh",
+                            db_con = db_con)
 
+upsert_region_hydrographique(dataset = region_hydrographique,
+                             table_name = "region_hydrographique",
+                             db_con = db_con,
+                             field_identifier = "cdregionhy")
+set_displayed_bassin_region(table_name = "region_hydrographique",
+                            display_codes_bassin_or_region = c("W"),
+                            field_identifier = "cdregionhy",
+                            db_con = db_con)
 ```
 
 ### Check swaths

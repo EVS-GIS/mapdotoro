@@ -87,20 +87,18 @@ upsert_bassin_hydrographique <- function(dataset = bassin_hydrographique,
 #' @export
 upsert_region_hydrographique <- function(dataset = region_hydrographique,
                                          table_name = "region_hydrographique",
-                                         db_con){
+                                         db_con,
+                                         field_identifier = "cdregionhy"){
 
   region_hydro <- dataset %>%
     st_transform(crs = 4326) %>%
-    ms_simplify(keep = 0.01, keep_shapes = TRUE, weighting = 0.5)
+    ms_simplify(keep = 0.01, keep_shapes = TRUE, weighting = 0.5) %>%
+    st_cast("MULTIPOLYGON") %>%
+    st_zm()
 
-  # rows to removed in database
-  rows_to_remove <- paste0("(", toString(unique(region_hydro$cdbh)), ")")
-
-  # remove rows in table
-  query <- glue::glue("
-    DELETE FROM {table_name} WHERE axis IN {rows_to_remove};")
-  dbExecute(db_con, query)
-  cat(query, "\n")
+  remove_rows(dataset = dataset,
+              field_identifier = field_identifier,
+              table_name = table_name)
 
   st_write(obj = region_hydro, dsn = db_con, layer = table_name, append = TRUE)
 
@@ -116,22 +114,42 @@ upsert_region_hydrographique <- function(dataset = region_hydrographique,
   dbExecute(db_con, query)
   cat(query, "\n")
 
+  query <- glue::glue("
+    UPDATE {table_name}
+    SET gid_bassin =
+      bassin_hydrographique.gid
+    FROM bassin_hydrographique
+    WHERE bassin_hydrographique.cdbh LIKE {table_name}.cdbh;")
+  dbExecute(db_con, query)
+  cat(query, "\n")
+
+  query <- glue::glue("
+    UPDATE {table_name}
+    SET geom = ST_Force2D(geom);")
+  dbExecute(db_con, query)
+  cat(query, "\n")
+
   return(glue::glue("{table_name} updated"))
 }
 
 #' Set display column value for bassin or region table.
 #'
 #' @param table_name bassin or region table name.
-#' @param code_with_data A vector with the list of cdbh for bassin, cdregionhy for region value to set the displayed polygons.
+#' @param display_codes_bassin_or_region A vector with the list of cdbh for bassin, cdregionhy for region value to set the displayed polygons.
+#' @param db_con DBI connection to database.
+#' @param field_identifier text field identifier name to identified rows to remove.
 #'
+#' @importFrom glue glue
 #' @importFrom DBI dbExistsTable dbExecute
 #'
 #' @return text
 #' @export
 set_displayed_bassin_region <- function(table_name,
-                                        code_with_data){
+                                        display_codes_bassin_or_region,
+                                        field_identifier,
+                                        db_con){
 
-  displayed_gid <- toString(code_with_data)
+  displayed <- paste0("('", paste(display_codes_bassin_or_region, collapse = "','"), "')")
 
   table_exist <- dbExistsTable(db_con, table_name)
 
@@ -139,14 +157,14 @@ set_displayed_bassin_region <- function(table_name,
     query <- glue::glue("
     UPDATE {table_name}
     SET display = TRUE
-    WHERE gid in ({code_with_data});")
+    WHERE {field_identifier} in {displayed};")
     dbExecute(db_con, query)
     cat(query, "\n")
 
     query <- glue::glue("
     UPDATE {table_name}
     SET display = FALSE
-    WHERE gid not in ({code_with_data}); ")
+    WHERE {field_identifier} not in {displayed}; ")
     dbExecute(db_con, query)
     cat(query, "\n")
   } else {
@@ -190,5 +208,5 @@ remove_rows <- function(dataset,
     deleted_rows <- 0
   }
 
-  return(cat("Row deleted :",toString(deleted_rows)))
+  return(cat("Row deleted :",toString(deleted_rows), "\n"))
 }

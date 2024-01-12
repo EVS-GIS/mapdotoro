@@ -41,12 +41,17 @@ create_table_bassin_hydrographique <- function(table_name = "bassin_hydrographiq
 #' Create region_hydrographique table structure
 #'
 #' @param table_name table name.
+#' @param db_con DBI database connection.
+#'
+#' @importFrom glue glue
+#' @importFrom DBI dbExecute
 #'
 #' @return text
 #' @export
-create_table_public.region_hydrographique <- function(table_name = "public.region_hydrographique"){
+create_table_region_hydrographique <- function(table_name = "region_hydrographique",
+                                               db_con){
   query <- glue::glue("
-    CREATE TABLE public.region_hydrographique (
+    CREATE TABLE public.{table_name} (
     gid SERIAL PRIMARY KEY,
     cdregionhy text,
     lbregionhy text,
@@ -85,8 +90,10 @@ create_table_public.region_hydrographique <- function(table_name = "public.regio
   cat(query, "\n")
 
   query <- glue::glue("
-    UPDATE {table_name}
-    SET geom = ST_Force2D(geom);")
+    ALTER TABLE {table_name}
+    ADD CONSTRAINT fk_region_gid_bassin
+    FOREIGN KEY(gid_bassin)
+    REFERENCES bassin_hydrographique(gid);")
   dbExecute(db_con, query)
   cat(query, "\n")
 

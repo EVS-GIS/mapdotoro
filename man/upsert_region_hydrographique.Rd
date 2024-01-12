@@ -7,7 +7,8 @@
 upsert_region_hydrographique(
   dataset = region_hydrographique,
   table_name = "region_hydrographique",
-  db_con
+  db_con,
+  field_identifier = "cdregionhy"
 )
 }
 \arguments{

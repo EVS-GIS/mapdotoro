@@ -4,14 +4,28 @@
 \alias{set_displayed_bassin_region}
 \title{Set display column value for bassin or region table.}
 \usage{
-set_displayed_bassin_region(table_name, code_with_data)
+set_displayed_bassin_region(
+  table_name,
+  display_codes_bassin_or_region,
+  field_identifier,
+  db_con
+)
 
-set_displayed_bassin_region(table_name, code_with_data)
+set_displayed_bassin_region(
+  table_name,
+  display_codes_bassin_or_region,
+  field_identifier,
+  db_con
+)
 }
 \arguments{
 \item{table_name}{bassin or region table name.}
 
-\item{code_with_data}{A vector with the list of cdbh for bassin, cdregionhy for region value to set the displayed polygons.}
+\item{display_codes_bassin_or_region}{A vector with the list of cdbh for bassin, cdregionhy for region value to set the displayed polygons.}
+
+\item{field_identifier}{text field identifier name to identified rows to remove.}
+
+\item{db_con}{DBI connection to database.}
 
 \item{code_bassin_with_data}{A vector with the list of cdbh value to set the displayed bassin.}
 }
