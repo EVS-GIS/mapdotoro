@@ -18,7 +18,7 @@ prepare_bassin_hydrographique <- function(dataset = input_bassin_hydrographique)
   return(bassin)
 }
 
-#' Create bassin_hydrographique table structure
+#' Create bassin_hydrographique table structure.
 #'
 #' @param table_name table name.
 #' @param db_con DBI database connection.
@@ -72,8 +72,7 @@ create_table_bassin_hydrographique <- function(table_name = "bassin_hydrographiq
 upsert_bassin_hydrographique <- function(dataset = bassin_hydrographique,
                                          table_name = "bassin_hydrographique",
                                          db_con,
-                                         field_identifier = "cdbh"
-){
+                                         field_identifier = "cdbh"){
 
   bassin_hydro <- dataset %>%
     st_transform(crs = 4326) %>%

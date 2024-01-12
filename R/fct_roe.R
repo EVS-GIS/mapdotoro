@@ -4,7 +4,7 @@
 #' @param region_hydro sf data.frame hydrographic regions to set spatial join on gid_region.
 #'
 #' @importFrom dplyr select mutate
-#' @importFrom sf st_join st_geometry
+#' @importFrom sf st_join st_geometry st_within
 #'
 #' @return sf data.frame
 #' @export

@@ -69,6 +69,8 @@ input_region_hydrographique <- st_read(dsn = file.path("data-raw", "raw-datasets
 
 input_roe <- st_read(dsn = file.path("data-raw", "raw-datasets", "roe.gpkg"))
 
+input_hydro_stations <- import_hydro_stations(url = "https://hubeau.eaufrance.fr/api/v1/ecoulement/stations?format=json")
+
 referentiel_hydro <- st_read(dsn = file.path("data-raw", "raw-datasets", "REFERENTIEL_HYDRO.shp"))
 swaths <- st_read(dsn = file.path("data-raw", "raw-datasets", "SWATHS_MEDIALAXIS.shp"))
 talweg_metrics <- readr::read_csv(file.path("data-raw", "raw-datasets", "TALWEG_METRICS.csv"))
@@ -83,6 +85,9 @@ region_hydrographique <- prepare_region_hydrographique(input_region_hydrographiq
 
 roe <- prepare_roe(input_roe,
                    region_hydro = region_hydrographique)
+
+hydro_stations <- prepare_hydro_stations(dataset = input_hydro_stations,
+                                         region_hydro = region_hydrographique)
 ```
 
 ### Database connection
@@ -104,6 +109,9 @@ create_table_region_hydrographique(table_name = "region_hydrographique",
                                    db_con = db_con)
 create_table_roe(table_name = "roe",
                  db_con = db_con)
+
+create_table_hydro_stations(table_name = "hydro_stations",
+                            db_con = db_con)
 ```
 
 ### Update and insert database
@@ -130,6 +138,11 @@ upsert_roe(dataset = roe,
            table_name = "roe", 
            db_con = db_con, 
            field_identifier = "cdobstecou")
+
+upsert_hydro_stations(dataset = hydro_stations,
+                      table_name = "hydro_stations",
+                      db_con = db_con,
+                      field_identifier = "code_station")
 
 ```
 
