@@ -102,7 +102,6 @@ create_table_hydro_stations <- function(table_name = "hydro_stations",
     CREATE INDEX idx_geom_{table_name}
     ON {table_name} USING GIST (geom);")
   dbExecute(db_con, query)
-  cat(query, "\n")
 
   query <- glue::glue("
     ALTER TABLE {table_name}
@@ -110,13 +109,11 @@ create_table_hydro_stations <- function(table_name = "hydro_stations",
     FOREIGN KEY(gid_region)
     REFERENCES region_hydrographique(gid);")
   dbExecute(db_con, query)
-  cat(query, "\n")
 
   query <- glue::glue("
     CREATE INDEX idx_gid_region_{table_name}
     ON hydro_stations USING btree(gid_region);")
   dbExecute(db_con, query)
-  cat(query, "\n")
 
   return(glue::glue("{table_name} has been successfully created"))
 }

@@ -113,6 +113,8 @@ check_duplicate <- function(dataset,
     }
   }
 
+  cat(nrow(duplicated_rows), "duplicated", axis_field, measure_field, "found for", nrow(dataset), "rows.", "\n")
+
   return(list(duplicated_rows = duplicated_rows, duplicated_summary = duplicated_summary))
 }
 
@@ -142,5 +144,7 @@ clean_duplicated <- function(dataset,
     st_drop_geometry()
 
   cleaned_dataset <- dplyr::anti_join(dataset, duplicated_rows, by = c(axis_field, measure_field))
+
+  cat(nrow(cleaned_dataset), "rows kept,", nrow(duplicated_rows), "removed rows", "\n")
   return(cleaned_dataset)
 }

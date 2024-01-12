@@ -63,14 +63,16 @@ input_roe <- st_read(dsn = file.path("data-raw", "raw-datasets", "roe.gpkg"))
 
 input_hydro_stations <- import_hydro_stations(url = "https://hubeau.eaufrance.fr/api/v1/ecoulement/stations?format=json")
 
+input_talweg_metrics <- readr::read_csv(file.path("data-raw", "raw-datasets", "TALWEG_METRICS.csv"))
+
 referentiel_hydro <- st_read(dsn = file.path("data-raw", "raw-datasets", "REFERENTIEL_HYDRO.shp"))
 swaths <- st_read(dsn = file.path("data-raw", "raw-datasets", "SWATHS_MEDIALAXIS.shp"))
-talweg_metrics <- readr::read_csv(file.path("data-raw", "raw-datasets", "TALWEG_METRICS.csv"))
+
 landcover <- readr::read_csv(file.path("data-raw", "raw-datasets", "WIDTH_LANDCOVER.csv"))
 continuity <- readr::read_csv(file.path("data-raw", "raw-datasets", "WIDTH_CONTINUITY.csv"))
 ```
 
-### Prepare bassin, region, ROE
+### Prepare dataset
 
 ``` r
 bassin_hydrographique <- prepare_bassin_hydrographique(input_bassin_hydrographique)
@@ -82,6 +84,8 @@ roe <- prepare_roe(input_roe,
 
 hydro_stations <- prepare_hydro_stations(dataset = input_hydro_stations,
                                          region_hydro = region_hydrographique)
+
+talweg_metrics <- prepare_talweg_metrics(dataset = input_talweg_metrics)
 ```
 
 ### Database connection
@@ -106,6 +110,9 @@ create_table_roe(table_name = "roe",
                  db_con = db_con)
 
 create_table_hydro_stations(table_name = "hydro_stations",
+                            db_con = db_con)
+
+create_table_talweg_metrics(table_name = "talweg_metrics",
                             db_con = db_con)
 ```
 
@@ -139,6 +146,11 @@ upsert_hydro_stations(dataset = hydro_stations,
                       table_name = "hydro_stations",
                       db_con = db_con,
                       field_identifier = "code_station")
+
+upsert_talweg_metrics(dataset = talweg_metrics,
+                      table_name = "talweg_metrics",
+                      db_con = db_con,
+                      field_identifier = "axis")
 ```
 
 ### Check swaths
@@ -301,15 +313,6 @@ hydro_axis <- hydro_swaths_measured %>%
             geom = st_union(geom)) %>% # union geom and recalculate length
   left_join(referentiel_hydro_no_geom, by = c("axis" = "AXIS"), multiple = "first") %>% # add TOPONYME field
   rename_with(tolower)
-```
-
-### Prepare talweg metric
-
-``` r
-talweg_metrics_duplicated <- check_duplicate(talweg_metrics, axis_field = "axis",measure_field = "measure")
-
-talweg_metrics_prepared <- clean_duplicated(dataset = talweg_metrics, duplicated_dataset = talweg_metrics_duplicated$duplicated_rows, axis_field = "axis", measure_field = "measure") %>% 
-  rename("measure_medial_axis" = "measure")
 ```
 
 ### Prepare landcover area
