@@ -101,7 +101,7 @@ db_con <- DBI::dbConnect(RPostgres::Postgres(),
 create_table_bassin_hydrographique(table_name = "bassin_hydrographique",
                                     db_con = db_con)
 create_table_region_hydrographique(table_name = "region_hydrographique",
-                                   db_con)
+                                   db_con = db_con)
 create_table_roe(table_name = "roe",
                  db_con = db_con)
 ```
