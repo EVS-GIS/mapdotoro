@@ -1,3 +1,52 @@
+#' Prepare landcover area to database export.
+#'
+#' @param dataset data.frame landcover imported.
+#'
+#' @importFrom dplyr filter rename_all rename
+#'
+#' @return data.frame landcover area prepared.
+#' @export
+prepare_landcover_area <- function(dataset = input_landcover){
+
+  landcover_area_prepared <- prepare_landcover_continuity_area(dataset) %>%
+    rename_all(clean_column_names) %>%
+    rename(measure_medial_axis = measure)
+
+  # check for duplicate (should not print red L'axe axe_number a des doublons !)
+  landcover_area_prepared_left <- landcover_area_prepared %>%
+    filter(side == "left")
+
+  cat("check duplicated for left side", "\n")
+  landcover_area_duplicated_left <- check_duplicate(dataset = landcover_area_prepared_left,
+                                                    axis_field = "axis",
+                                                    measure_field = "measure_medial_axis")
+  # clean dataset if duplicated found
+  if (nrow(landcover_area_duplicated_left$duplicated_rows)>0){
+    clean_duplicated(landcover_area_prepared,
+                     landcover_area_duplicated_left$duplicated_rows,
+                     axis_field = "axis",
+                     measure_field = "measure_medial_axis")
+  }
+
+  landcover_area_prepared_right <- landcover_area_prepared %>%
+    filter(side == "right")
+
+  cat("check duplicated for right side", "\n")
+  landcover_area_duplicated_right <- check_duplicate(dataset = landcover_area_prepared_right,
+                                                     axis_field = "axis",
+                                                     measure_field = "measure_medial_axis")
+
+  # clean dataset if duplicated found
+  if (nrow(landcover_area_duplicated_right$duplicated_rows)>0){
+    clean_duplicated(landcover_area_prepared,
+                     landcover_area_duplicated_right$duplicated_rows,
+                     axis_field = "axis",
+                     measure_field = "measure_medial_axis")
+  }
+
+  return(landcover_area_prepared)
+}
+
 #' Export landcover area to database
 #'
 #' @param dataset landcover data.frame.
@@ -17,7 +66,8 @@ pg_export_landcover_area <- function(dataset = landcover_area_prepared,
                                      db_con){
 
   landcover_area <- dataset %>%
-    rename_all(clean_column_names)
+    rename_all(clean_column_names) %>%
+    rename(measure_medial_axis = measure)
 
   table_exist <- dbExistsTable(db_con, table_name)
   if (table_exist){
