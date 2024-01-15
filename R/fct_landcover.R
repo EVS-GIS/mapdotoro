@@ -47,6 +47,57 @@ prepare_landcover_area <- function(dataset = input_landcover){
   return(landcover_area_prepared)
 }
 
+#' Create landcover_area table structure.
+#'
+#' @param table_name table name.
+#' @param db_con DBI database connection.
+#'
+#' @importFrom glue glue
+#' @importFrom DBI dbExecute
+#'
+#' @return text
+#' @export
+create_table_landcover_area <- function(table_name = "landcover_area",
+                                        db_con){
+  query <- glue::glue("
+    CREATE TABLE public.{table_name} (
+    id SERIAL PRIMARY KEY,
+    side text,
+    axis double precision,
+    measure_medial_axis double precision,
+    water_channel double precision,
+    gravel_bars double precision,
+    natural_open double precision,
+    forest double precision,
+    grassland double precision,
+    crops double precision,
+    diffuse_urban double precision,
+    dense_urban double precision,
+    infrastructures double precision,
+    sum_area double precision,
+    water_channel_pc double precision,
+    gravel_bars_pc double precision,
+    natural_open_pc double precision,
+    forest_pc double precision,
+    grassland_pc double precision,
+    crops_pc double precision,
+    diffuse_urban_pc double precision,
+    dense_urban_pc double precision,
+    infrastructures_pc double precision,
+    hydro_swaths_gid integer
+    );")
+  dbExecute(db_con, query)
+
+  return(glue::glue("{table_name} has been successfully created"))
+}
+
+
+
+
+
+
+
+
 #' Export landcover area to database
 #'
 #' @param dataset landcover data.frame.

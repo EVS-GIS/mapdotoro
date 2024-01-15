@@ -121,6 +121,9 @@ create_table_hydro_stations(table_name = "hydro_stations",
 
 create_table_talweg_metrics(table_name = "talweg_metrics",
                             db_con = db_con)
+
+create_table_landcover_area(table_name = "landcover_area",
+                            db_con = db_con)
 ```
 
 ### Update and insert database
