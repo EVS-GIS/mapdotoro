@@ -40,8 +40,8 @@ create_table_talweg_metrics <- function(table_name = "talweg_metrics",
     height_valley_bottom double precision,
     slope_talweg double precision,
     slope_valley_bottom double precision,
-    axis double precision,
-    measure_medial_axis double precision,
+    axis bigint,
+    measure_medial_axis bigint,
     sinuosity double precision
     );")
   dbExecute(db_con, query)
@@ -62,7 +62,7 @@ create_table_talweg_metrics <- function(table_name = "talweg_metrics",
 #' @param db_con DBI connection to database.
 #' @param field_identifier text field identifier name to identified rows to remove.
 #'
-#' @importFrom DBI dbExecute
+#' @importFrom DBI dbExecute dbWriteTable
 #' @importFrom glue glue
 #'
 #' @return text
@@ -72,13 +72,16 @@ upsert_talweg_metrics <- function(dataset = talweg_metrics,
                                   db_con,
                                   field_identifier = "axis"){
 
-  remove_rows(dataset = dataset,
+  metrics <- dataset %>%
+    as.data.frame()
+
+  remove_rows(dataset = metrics,
               field_identifier = field_identifier,
               table_name = table_name)
 
-  st_write(obj = dataset, dsn = db_con, layer = table_name, append = TRUE)
+  dbWriteTable(conn = db_con, name = table_name, value = metrics, append = TRUE)
 
-  rows_insert <- nrow(dataset)
+  rows_insert <- nrow(metrics)
 
   return(glue::glue("{table_name} updated with {rows_insert} inserted"))
 }

@@ -19,9 +19,16 @@ You can install the development version of mapdotoro from
 devtools::install_github("EVS-GIS/mapdotoro")
 ```
 
+mapdotro use qgisprocess package, [QGIS](https://www.qgis.org/en/site/)
+with the [Fluvial Corridor Toolbox](https://github.com/EVS-GIS/fct-qgis)
+plugin installed.
+
+Tested with QGIS version 3.28.13 and Fluvial Corridor Toolbox version
+1.0.11.
+
 ## Workflow
 
-### Libraries
+### Libraries and QGIS configuration
 
 ``` r
 library(dplyr)
@@ -32,22 +39,22 @@ library(tidyr)
 library(lwgeom)
 library(qgisprocess)
 library(DBI)
+
+qgis_configure()
 ```
 
 ### Testing data
 
 ``` r
-bassin_hydrographique <- bassin_hydrographique %>% 
-  rename_with(tolower)
-region_hydrographique <- region_hydrographique %>% 
-  rename_with(tolower)
-roe <- roe %>% 
-  rename_with(tolower)
-referentiel_hydro <- referentiel_hydro
-swaths <- swaths
-talweg_metrics <- talweg_metrics
-landcover <- landcover
-continuity <- continuity
+input_bassin_hydrographique <- bassin_hydrographique
+input_region_hydrographique <- region_hydrographique
+input_roe <- roe
+input_hydro_stations <- hydro_stations
+input_referentiel_hydro <- referentiel_hydro
+input_swaths <- swaths
+input_talweg_metrics <- talweg_metrics
+input_landcover <- landcover
+input_continuity <- continuity
 ```
 
 ### Datasets from the Fluvial Corridor Toolbox
@@ -65,8 +72,8 @@ input_hydro_stations <- import_hydro_stations(url = "https://hubeau.eaufrance.fr
 
 input_talweg_metrics <- readr::read_csv(file.path("data-raw", "raw-datasets", "TALWEG_METRICS.csv"))
 
-referentiel_hydro <- st_read(dsn = file.path("data-raw", "raw-datasets", "REFERENTIEL_HYDRO.shp"))
-swaths <- st_read(dsn = file.path("data-raw", "raw-datasets", "SWATHS_MEDIALAXIS.shp"))
+input_referentiel_hydro <- st_read(dsn = file.path("data-raw", "raw-datasets", "REFERENTIEL_HYDRO.shp"))
+input_swaths <- st_read(dsn = file.path("data-raw", "raw-datasets", "SWATHS_MEDIALAXIS.shp"))
 
 input_landcover <- readr::read_csv(file.path("data-raw", "raw-datasets", "WIDTH_LANDCOVER.csv"))
 continuity <- readr::read_csv(file.path("data-raw", "raw-datasets", "WIDTH_CONTINUITY.csv"))
@@ -88,6 +95,10 @@ hydro_stations <- prepare_hydro_stations(dataset = input_hydro_stations,
 talweg_metrics <- prepare_talweg_metrics(dataset = input_talweg_metrics)
 
 landcover_area <- prepare_landcover_area(dataset = input_landcover)
+
+hydro_swaths <- prepare_hydro_swaths(swaths_dataset = input_swaths,
+                                     referentiel_hydro_dataset = input_referentiel_hydro,
+                                     region_hydro = region_hydrographique)
 ```
 
 ### Database connection
@@ -106,8 +117,10 @@ db_con <- DBI::dbConnect(RPostgres::Postgres(),
 ``` r
 create_table_bassin_hydrographique(table_name = "bassin_hydrographique",
                                     db_con = db_con)
+
 create_table_region_hydrographique(table_name = "region_hydrographique",
                                    db_con = db_con)
+
 create_table_roe(table_name = "roe",
                  db_con = db_con)
 
@@ -119,6 +132,18 @@ create_table_talweg_metrics(table_name = "talweg_metrics",
 
 create_table_landcover_area(table_name = "landcover_area",
                             db_con = db_con)
+
+create_table_hydro_swaths(table_name = "hydro_swaths",
+                          db_con = db_con)
+```
+
+### Add functions and triggers to Postgresql database
+
+``` r
+# Update talweg_metrics_id in hydro_swaths table for delete and insert in hydro_swaths and talweg_metrics
+fct_update_hydro_swaths_talweg_metrics_id(db_con = db_con)
+fct_update_hydro_swaths_talweg_metrics_id_talweg_metrics(db_con = db_con)
+trig_update_talweg_metrics_id(db_con = db_con)
 ```
 
 ### Update and insert database
@@ -156,6 +181,11 @@ upsert_talweg_metrics(dataset = talweg_metrics,
                       table_name = "talweg_metrics",
                       db_con = db_con,
                       field_identifier = "axis")
+
+upsert_hydro_swaths(dataset = hydro_swaths,
+                    table_name = "hydro_swaths",
+                    db_con = db_con,
+                    field_identifier = "axis")
 ```
 
 ### Check swaths

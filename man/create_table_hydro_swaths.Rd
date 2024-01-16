@@ -4,10 +4,12 @@
 \alias{create_table_hydro_swaths}
 \title{Create hydro_swaths table structure}
 \usage{
-create_table_hydro_swaths(table_name = "hydro_swaths")
+create_table_hydro_swaths(table_name = "hydro_swaths", db_con)
 }
 \arguments{
 \item{table_name}{table name.}
+
+\item{db_con}{DBI database connection.}
 }
 \value{
 text

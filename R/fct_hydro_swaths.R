@@ -1,49 +1,206 @@
+#' Prepare hydro_swaths dataset to database export.
+#'
+#' @param swaths_dataset sf data.frame swaths dataset.
+#' @param referentiel_hydro_dataset sf data.frame hydrographic network dataset.
+#' @param region_hydro sf data.frame region_hydrographique dataset prepared.
+#'
+#' @importFrom sf st_geometry st_sf st_sfc st_zm st_combine st_line_merge st_collection_extract st_join st_drop_geometry st_buffer
+#' @importFrom dplyr select filter mutate rename
+#' @importFrom qgisprocess qgis_run_algorithm_p
+#' @importFrom lwgeom st_split
+#'
+#' @return sf data.frame
+#' @export
+prepare_hydro_swaths <- function(swaths_dataset = input_swaths,
+                                 referentiel_hydro_dataset = input_referentiel_hydro,
+                                 region_hydro = region_hydrographique){
+
+  cat("Keep only valid swaths", "\n")
+  swaths_valid <- swaths_dataset %>%
+    filter(VALUE == 2)
+
+  cat("Check duplicate from axis and measure field", "\n")
+  swaths_duplicated <- check_duplicate(swaths_valid)
+
+  # remove duplicated swaths
+  swaths_cleaned <- clean_duplicated(dataset = swaths_valid,
+                                     duplicated_dataset = swaths_duplicated$duplicated_rows)
+
+  ### split hydro network by swaths ###
+  cat("split", toString(substitute(referentiel_hydro_dataset)), "by swaths", "\n")
+  hydro_swaths <- st_sf(st_sfc(crs = 2154)) # create an empty sf dataset
+  # clip by axis
+  for (axis in unique(swaths_cleaned$AXIS)){
+    swaths_axe <- swaths_cleaned %>%
+      filter(AXIS == axis) # get swaths by axis
+    hydro_axe <- referentiel_hydro_dataset %>%
+      filter(AXIS == axis) %>% # get streams by axis
+      st_zm () %>%
+      st_combine() %>%
+      st_sf() %>%
+      st_line_merge() # merge all the axis before split geometry
+    hydro_swaths_axis <- hydro_axe %>%
+      st_split(swaths_axe) %>% # split referentiel hydro
+      st_collection_extract("LINESTRING") %>% # extract the linestring splited
+      st_join(swaths_axe, join = st_within) %>% # get the field and data from swaths
+      mutate(AXIS = ifelse(is.na(AXIS), axis, AXIS)) # fill axis field even if no swaths on network
+    hydro_swaths <- rbind(hydro_swaths, hydro_swaths_axis) # fill the output dataset by axis
+  }
+
+  #### clean duplicated lines ####
+  # prepare hydro_swaths to clean duplicate
+  hydro_swaths <- hydro_swaths %>%
+    mutate(id = row_number()) %>% # create an unique id
+    mutate(LENG = st_length(.)) # add length in swath
+
+  cat("check duplicate lines in splited network", "\n")
+  hydro_swaths_duplicated <- check_duplicate(hydro_swaths)
+
+  cat("fix duplicated [AXIS, M] lines without removing geometries", "\n")
+  # in the duplicated lines, identified the shortest
+  hydro_swaths_prepared_clean <- st_sf(st_sfc(crs = 2154)) # create an empty sf dataset
+  for (measure in unique(hydro_swaths_duplicated$duplicated_rows$M)){
+    duplicate_to_fix <- hydro_swaths_duplicated$duplicated_rows %>%
+      filter(M == measure) %>%
+      filter(LENG < max(LENG)) %>% # the shortest lines will be removed
+      mutate(M = -1) # set the shortest line to -1 to identify them
+    hydro_swaths_prepared_clean <- rbind(hydro_swaths_prepared_clean, duplicate_to_fix)
+  }
+
+  # prepare the duplicated lines to merge with hydro_swaths
+  hydro_swaths_prepared_clean <- hydro_swaths_prepared_clean %>%
+    st_drop_geometry() %>%
+    select (id, M)
+
+  # set the shortest duplicated lines measure to NA (we keep the geometry but we remove the duplicated)
+  hydro_swaths_cleaned <- merge(hydro_swaths, hydro_swaths_prepared_clean, by = "id", all.x = TRUE) %>%
+    mutate(M.x = ifelse(!is.na(M.y) & M.y == -1, NA, M.x)) %>% # the lines set to -1 are NA in hydro_swaths
+    select(-M.y) %>%
+    rename("M" = M.x) %>%
+    select(AXIS, M, DRAINAGE, geometry)
+
+  #### Process measure_from_outlet ####
+  cat("process measure_from_outlet : identifynetworknodes", "\n")
+  identifynetworknodes <- hydro_swaths_cleaned %>%
+    qgis_run_algorithm_p("fct:identifynetworknodes",
+                         QUANTIZATION = 100000000)
+
+  # remove row when NODEA = NODEB (when distance is too short the node id is the same)
+  hydro_swaths_identified <- st_read(identifynetworknodes$OUTPUT) %>%
+    filter(NODEA != NODEB)
+
+  cat("process measure_from_outlet : measurenetworkfromoutlet", "\n")
+  # create measure network from outlet field, measure = 0 from each axis beginning
+  measurenetworkfromoutlet <- hydro_swaths_identified %>%
+    qgis_run_algorithm_p("fct:measurenetworkfromoutlet",
+                         FROM_NODE_FIELD = "NODEA",
+                         TO_NODE_FIELD = "NODEB")
+
+  #### Add Stahler order ####
+  # need integer fid and not numeric to perform QGIS spatial join
+  referentiel_hydro <- referentiel_hydro_dataset # copy data.frame
+  referentiel_hydro$fid <- as.integer(referentiel_hydro$fid)
+
+  # create small buffer before spatial join
+  referentiel_hydro_buff <- referentiel_hydro %>%
+    st_zm() %>%
+    st_buffer(dist = 1)
+
+  cat("join strahler order from ", toString(substitute(referentiel_hydro_dataset)), "\n")
+  # spatial join with QGIS working better than sf with "biggest overlap" method
+  hydro_swaths_strahler <- st_read(measurenetworkfromoutlet$OUTPUT) %>%
+    qgis_run_algorithm_p("native:joinattributesbylocation",
+                         DISCARD_NONMATCHING = FALSE,
+                         JOIN = referentiel_hydro_buff,
+                         JOIN_FIELDS = "STRAHLER",
+                         METHOD = 2, # attribute with biggest overlap
+                         PREDICATE = 0, # intersect
+                         PREFIX = "")
+
+  #### format output ####
+  # format attributes
+  hydro_swaths_prepared <- st_read(hydro_swaths_strahler$OUTPUT) %>%
+    st_zm() %>%
+    select(-NODEA, -NODEB) %>%
+    rename_all(clean_column_names) %>%
+    rename(measure_medial_axis = m,
+           measure_from_outlet = measure) %>%
+    st_join(region_hydro, join = st_within) %>%
+    mutate(gid_region = gid) %>%
+    select(-colnames(region_hydro)[colnames(region_hydro) != "geom"]) # remove region_hydro columns
+
+  return(hydro_swaths_prepared)
+}
+
 #' Create hydro_swaths table structure
 #'
 #' @param table_name table name.
+#' @param db_con DBI database connection.
+#'
+#' @importFrom glue glue
+#' @importFrom DBI dbExecute
 #'
 #' @return text
 #' @export
-create_table_hydro_swaths <- function(table_name = "hydro_swaths"){
+create_table_hydro_swaths <- function(table_name = "hydro_swaths",
+                                      db_con){
   query <- glue::glue("
     CREATE TABLE public.{table_name} (
-    gid SERIAL PRIMARY KEY,
-    axis double precision,
-    measure_medial_axis double precision,
-    drainage double precision,
+    gid BIGSERIAL PRIMARY KEY,
+    axis bigint,
+    measure_medial_axis bigint,
     measure_from_outlet double precision,
+    drainage double precision,
     length double precision,
     strahler integer,
-    gid_region double precision,
-    geom public.geometry,
+    gid_region integer,
     talweg_metrics_id integer,
-    hydro_axis_gid integer
+    geom public.geometry(LineString)
     );")
   dbExecute(db_con, query)
-  cat(query, "\n")
 
   query <- glue::glue("
     ALTER TABLE {table_name}
     ADD CONSTRAINT {table_name}_unq_axis_measure
     UNIQUE (axis, measure_medial_axis);")
   dbExecute(db_con, query)
-  cat(query, "\n")
 
   query <- glue::glue("
     CREATE INDEX idx_geom_{table_name}
     ON {table_name} USING GIST (geom);")
   dbExecute(db_con, query)
-  cat(query, "\n")
+
+  query <- glue::glue("
+    ALTER TABLE {table_name}
+    ADD CONSTRAINT fk_{table_name}_gid_region
+    FOREIGN KEY(gid_region)
+    REFERENCES region_hydrographique(gid);")
+  dbExecute(db_con, query)
+
+  query <- glue::glue("
+    ALTER TABLE {table_name}
+    ADD CONSTRAINT fk_{table_name}_talweg_metrics_id
+    FOREIGN KEY(talweg_metrics_id)
+    REFERENCES talweg_metrics(id);")
+  dbExecute(db_con, query)
+
+  # query <- glue::glue("
+  #   ALTER TABLE {table_name}
+  #   ADD CONSTRAINT fk_{table_name}_hydro_axis_gid
+  #   FOREIGN KEY(hydro_axis_gid)
+  #   REFERENCES hydro_axis(gid);")
+  # dbExecute(db_con, query)
+  # cat(query, "\n")
 
   return(glue::glue("{table_name} has been successfully created"))
 }
 
-#' Delete existing rows and insert hydrologic network splited by swaths to database
+#' Delete existing rows and insert hydrologic network splited by swaths to database.
 #'
 #' @param dataset hydrologic network splited sf data.frame.
 #' @param table_name database table name.
 #' @param db_con DBI connection to database.
-#' @param region_hydrographique_file_path file path to region hydrographique dataset.
+#' @param field_identifier text field identifier name to identified rows to remove.
 #'
 #' @importFrom sf st_write
 #' @importFrom DBI dbExecute
@@ -53,20 +210,21 @@ create_table_hydro_swaths <- function(table_name = "hydro_swaths"){
 #' @export
 upsert_hydro_swaths <- function(dataset = hydro_swaths_prepared,
                                 table_name = "hydro_swaths",
-                                db_con){
+                                db_con,
+                                field_identifier = "axis"){
 
-  # rows to removed in database
-  rows_to_remove <- paste0("(", toString(unique(dataset$axis)), ")")
+  hydro_swaths <- dataset %>%
+    st_transform(4326)
 
-  # remove rows in table
-  query <- glue::glue("
-    DELETE FROM {table_name} WHERE axis IN {rows_to_remove};")
-  dbExecute(db_con, query)
-  cat(query, "\n")
+  remove_rows(dataset = hydro_swaths,
+              field_identifier = field_identifier,
+              table_name = table_name)
 
-  st_write(obj = dataset, dsn = db_con, layer = table_name, append = TRUE)
+  st_write(obj = hydro_swaths, dsn = db_con, layer = table_name, append = TRUE)
 
-  return(glue::glue("{table_name} updated"))
+  rows_insert <- nrow(hydro_swaths)
+
+  return(glue::glue("{table_name} updated with {rows_insert} inserted"))
 }
 
 #' Export hydrologic network splited by swaths to database

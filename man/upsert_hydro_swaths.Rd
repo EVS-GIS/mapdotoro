@@ -2,12 +2,13 @@
 % Please edit documentation in R/fct_hydro_swaths.R
 \name{upsert_hydro_swaths}
 \alias{upsert_hydro_swaths}
-\title{Delete existing rows and insert hydrologic network splited by swaths to database}
+\title{Delete existing rows and insert hydrologic network splited by swaths to database.}
 \usage{
 upsert_hydro_swaths(
   dataset = hydro_swaths_prepared,
   table_name = "hydro_swaths",
-  db_con
+  db_con,
+  field_identifier = "axis"
 )
 }
 \arguments{
@@ -17,11 +18,11 @@ upsert_hydro_swaths(
 
 \item{db_con}{DBI connection to database.}
 
-\item{region_hydrographique_file_path}{file path to region hydrographique dataset.}
+\item{field_identifier}{text field identifier name to identified rows to remove.}
 }
 \value{
 text
 }
 \description{
-Delete existing rows and insert hydrologic network splited by swaths to database
+Delete existing rows and insert hydrologic network splited by swaths to database.
 }

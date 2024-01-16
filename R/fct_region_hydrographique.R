@@ -11,12 +11,13 @@ prepare_region_hydrographique <- function(dataset = input_region_hydrographique)
   st_geometry(dataset) <- "geom" # in case if geometry column name is not "geom"
 
   region <- dataset %>%
+    st_transform(2154) %>%
     rename_all(clean_column_names)
 
   return(region)
 }
 
-#' Create region_hydrographique table structure
+#' Create region_hydrographique table structure.
 #'
 #' @param table_name table name.
 #' @param db_con DBI database connection.
@@ -72,11 +73,12 @@ create_table_region_hydrographique <- function(table_name = "region_hydrographiq
   return(glue::glue("{table_name} has been successfully created"))
 }
 
-#' Delete existing rows and insert hydrologic region to database
+#' Delete existing rows and insert hydrologic region to database.
 #'
 #' @param dataset sf data.frame hydrologic region.
 #' @param table_name database table name.
 #' @param db_con DBI connection to database.
+#' @param field_identifier text field identifier name to identified rows to remove.
 #'
 #' @importFrom sf st_write st_cast st_zm st_transform
 #' @importFrom DBI dbExecute

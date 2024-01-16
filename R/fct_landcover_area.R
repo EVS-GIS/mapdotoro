@@ -63,8 +63,8 @@ create_table_landcover_area <- function(table_name = "landcover_area",
     CREATE TABLE public.{table_name} (
     id SERIAL PRIMARY KEY,
     side text,
-    axis double precision,
-    measure_medial_axis double precision,
+    axis bigint,
+    measure_medial_axis bigint,
     water_channel double precision,
     gravel_bars double precision,
     natural_open double precision,
@@ -84,7 +84,7 @@ create_table_landcover_area <- function(table_name = "landcover_area",
     diffuse_urban_pc double precision,
     dense_urban_pc double precision,
     infrastructures_pc double precision,
-    hydro_swaths_gid integer
+    hydro_swaths_gid bigint
     );")
   dbExecute(db_con, query)
 

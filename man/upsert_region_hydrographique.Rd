@@ -2,7 +2,7 @@
 % Please edit documentation in R/fct_region_hydrographique.R
 \name{upsert_region_hydrographique}
 \alias{upsert_region_hydrographique}
-\title{Delete existing rows and insert hydrologic region to database}
+\title{Delete existing rows and insert hydrologic region to database.}
 \usage{
 upsert_region_hydrographique(
   dataset = region_hydrographique,
@@ -17,10 +17,12 @@ upsert_region_hydrographique(
 \item{table_name}{database table name.}
 
 \item{db_con}{DBI connection to database.}
+
+\item{field_identifier}{text field identifier name to identified rows to remove.}
 }
 \value{
 text
 }
 \description{
-Delete existing rows and insert hydrologic region to database
+Delete existing rows and insert hydrologic region to database.
 }

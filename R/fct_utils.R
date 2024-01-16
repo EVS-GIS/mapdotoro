@@ -156,7 +156,7 @@ check_duplicate <- function(dataset,
       dplyr::filter(.data[[axis_field]]==axis_selected & !is.na(.data[[measure_field]])) # !is.na to not set NA as duplicate in the axis
     if (any(duplicated(net_axe[[measure_field]])) ==TRUE){ # if duplicate identified
       duplicate <- glue::glue("L'axe {axis_selected} a des doublons")
-      message(duplicate)
+      # message(duplicate)
       # two duplicates indices set to return all the rows involved in duplicate and not return only the first/last one.
       duplicated_rows <- rbind(duplicated_rows, net_axe[duplicated(net_axe[[measure_field]]) |
                                                           duplicated(net_axe[[measure_field]], fromLast = TRUE), ])

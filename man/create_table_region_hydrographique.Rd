@@ -2,7 +2,7 @@
 % Please edit documentation in R/fct_region_hydrographique.R
 \name{create_table_region_hydrographique}
 \alias{create_table_region_hydrographique}
-\title{Create region_hydrographique table structure}
+\title{Create region_hydrographique table structure.}
 \usage{
 create_table_region_hydrographique(
   table_name = "region_hydrographique",
@@ -18,5 +18,5 @@ create_table_region_hydrographique(
 text
 }
 \description{
-Create region_hydrographique table structure
+Create region_hydrographique table structure.
 }

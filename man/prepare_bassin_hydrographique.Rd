@@ -7,7 +7,7 @@
 prepare_bassin_hydrographique(dataset = input_bassin_hydrographique)
 }
 \arguments{
-\item{dataset}{bassin_hydrographique sf data.frame}
+\item{dataset}{sf data.frame bassin_hydrographique dataset.}
 }
 \value{
 sf data.frame

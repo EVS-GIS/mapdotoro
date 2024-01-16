@@ -4,7 +4,7 @@
 #' @param region_hydro sf data.frame hydrographic regions to set spatial join on gid_region.
 #'
 #' @importFrom dplyr select mutate
-#' @importFrom sf st_join st_geometry st_within
+#' @importFrom sf st_join st_geometry st_within st_transform
 #'
 #' @return sf data.frame
 #' @export
@@ -16,6 +16,7 @@ prepare_roe <- function(dataset = input_roe,
   roe <- dataset %>%
     rename_all(clean_column_names) %>%
     select(-gid) %>%
+    st_transform(2154) %>%
     st_join(region_hydro, join = st_within) %>%
     mutate(gid_region = gid) %>%
     select(-colnames(region_hydro)[colnames(region_hydro) != "geom"])

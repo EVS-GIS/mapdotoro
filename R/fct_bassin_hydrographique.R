@@ -1,19 +1,18 @@
 #' Prepare bassin_hydrographique dataset to database export.
 #'
-#' @param dataset bassin_hydrographique sf data.frame
+#' @param dataset sf data.frame bassin_hydrographique dataset.
 #'
-#' @importFrom sf st_geometry
+#' @importFrom sf st_geometry st_transform
 #' @importFrom dplyr select
 #'
 #' @return sf data.frame
 #' @export
 prepare_bassin_hydrographique <- function(dataset = input_bassin_hydrographique){
 
-  st_geometry(dataset) <- "geom" # in case if geometry column name is not "geom"
-
   bassin <- dataset %>%
     rename_all(clean_column_names) %>%
-    select(-gid)
+    select(-gid) %>%
+    st_transform(2154)
 
   return(bassin)
 }
