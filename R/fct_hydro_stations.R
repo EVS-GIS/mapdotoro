@@ -58,7 +58,7 @@ prepare_hydro_stations <- function(dataset = input_hydro_stations,
 #' @param db_con DBI database connection.
 #'
 #' @importFrom glue glue
-#' @importFrom DBI dbExecute
+#' @importFrom DBI dbExecute dbDisconnect
 #'
 #' @return text
 #' @export
@@ -116,6 +116,8 @@ create_table_hydro_stations <- function(table_name = "hydro_stations",
     ON hydro_stations USING btree(gid_region);")
   dbExecute(db_con, query)
 
+  dbDisconnect(db_con)
+
   return(glue::glue("{table_name} has been successfully created"))
 }
 
@@ -127,7 +129,7 @@ create_table_hydro_stations <- function(table_name = "hydro_stations",
 #' @param field_identifier text field identifier name to identified rows to remove.
 #'
 #' @importFrom sf st_write st_transform
-#' @importFrom DBI dbExecute
+#' @importFrom DBI dbExecute dbDisconnect
 #' @importFrom glue glue
 #'
 #' @return text
@@ -147,6 +149,8 @@ upsert_hydro_stations <- function(dataset = hydro_stations,
   st_write(obj = stations, dsn = db_con, layer = table_name, append = TRUE)
 
   rows_insert <- nrow(stations)
+
+  dbDisconnect(db_con)
 
   return(glue::glue("{table_name} updated with {rows_insert} inserted"))
 }

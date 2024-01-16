@@ -23,7 +23,7 @@ prepare_region_hydrographique <- function(dataset = input_region_hydrographique)
 #' @param db_con DBI database connection.
 #'
 #' @importFrom glue glue
-#' @importFrom DBI dbExecute
+#' @importFrom DBI dbExecute dbDisconnect
 #'
 #' @return text
 #' @export
@@ -70,6 +70,8 @@ create_table_region_hydrographique <- function(table_name = "region_hydrographiq
     REFERENCES bassin_hydrographique(gid);")
   dbExecute(db_con, query)
 
+  dbDisconnect(db_con)
+
   return(glue::glue("{table_name} has been successfully created"))
 }
 
@@ -81,7 +83,7 @@ create_table_region_hydrographique <- function(table_name = "region_hydrographiq
 #' @param field_identifier text field identifier name to identified rows to remove.
 #'
 #' @importFrom sf st_write st_cast st_zm st_transform
-#' @importFrom DBI dbExecute
+#' @importFrom DBI dbExecute dbDisconnect
 #' @importFrom glue glue
 #' @importFrom rmapshaper ms_simplify
 #'
@@ -128,6 +130,8 @@ upsert_region_hydrographique <- function(dataset = region_hydrographique,
   dbExecute(db_con, query)
 
   rows_insert <- nrow(region_hydro)
+
+  dbDisconnect(db_con)
 
   return(glue::glue("{table_name} updated with {rows_insert} inserted"))
 }

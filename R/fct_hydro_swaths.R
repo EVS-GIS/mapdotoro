@@ -138,7 +138,7 @@ prepare_hydro_swaths <- function(swaths_dataset = input_swaths,
 #' @param db_con DBI database connection.
 #'
 #' @importFrom glue glue
-#' @importFrom DBI dbExecute
+#' @importFrom DBI dbExecute dbDisconnect
 #'
 #' @return text
 #' @export
@@ -192,7 +192,95 @@ create_table_hydro_swaths <- function(table_name = "hydro_swaths",
   dbExecute(db_con, query)
   cat(query, "\n")
 
+  dbDisconnect(db_con)
+
   return(glue::glue("{table_name} has been successfully created"))
+}
+
+#' Add trigger function to react from hydro_swaths insert or delete
+#'
+#' @param db_con DBI connection to database.
+#'
+#' @importFrom DBI dbExecute dbDisconnect
+#' @import glue glue
+#'
+#' @return text
+#' @export
+fct_hydro_swaths_insert_delete_reaction <- function(db_con){
+
+  query <- glue::glue("
+    CREATE OR REPLACE FUNCTION hydro_swaths_insert_delete_reaction()
+    RETURNS TRIGGER AS $$
+    BEGIN
+      IF TG_OP = 'INSERT' THEN
+
+        -- update talweg_metrics_id from hydro_swaths
+        UPDATE hydro_swaths
+        SET talweg_metrics_id =
+          (SELECT talweg_metrics.id
+          FROM talweg_metrics
+          WHERE hydro_swaths.axis = talweg_metrics.axis
+            AND hydro_swaths.measure_medial_axis = talweg_metrics.measure_medial_axis
+          LIMIT 1)
+        WHERE NEW.gid = hydro_swaths.gid;
+
+        -- update hydro_swaths_gid from landcover_area
+        UPDATE landcover_area
+        SET hydro_swaths_gid = NEW.gid
+        WHERE NEW.axis = landcover_area.axis
+           AND NEW.measure_medial_axis = landcover_area.measure_medial_axis;
+
+        RETURN NEW;
+
+      ELSIF TG_OP = 'DELETE' THEN
+
+        -- set hydro_swaths_gid to NULL from landcover_area
+        UPDATE landcover_area
+        SET hydro_swaths_gid = NULL
+        WHERE OLD.gid = landcover_area.hydro_swaths_gid;
+
+        RETURN OLD;
+
+      END IF;
+
+    END;
+    $$ LANGUAGE plpgsql;")
+
+  dbExecute(db_con, query)
+
+  dbDisconnect(db_con)
+
+  return("hydro_swaths_insert_delete_reaction function added to database")
+}
+
+#' Create trigger to update tables from hydro_swaths modifications.
+#'
+#' @param db_con DBI connection to database.
+#'
+#' @importFrom DBI dbExecute dbDisconnect
+#' @import glue glue
+#'
+#' @return text
+#' @export
+trig_hydro_swaths <- function(db_con){
+
+  query <- glue::glue("
+    CREATE OR REPLACE TRIGGER after_insert_hydro_swaths
+    AFTER INSERT ON hydro_swaths
+    FOR EACH ROW
+    EXECUTE FUNCTION hydro_swaths_insert_delete_reaction();")
+  dbExecute(db_con, query)
+
+  query <- glue::glue("
+    CREATE OR REPLACE TRIGGER after_delete_hydro_swaths
+    BEFORE DELETE ON hydro_swaths
+    FOR EACH ROW
+    EXECUTE FUNCTION hydro_swaths_insert_delete_reaction();")
+  dbExecute(db_con, query)
+
+  dbDisconnect(db_con)
+
+  return("hydro_swaths triggers added to database")
 }
 
 #' Delete existing rows and insert hydrologic network splited by swaths to database.
@@ -203,7 +291,7 @@ create_table_hydro_swaths <- function(table_name = "hydro_swaths",
 #' @param field_identifier text field identifier name to identified rows to remove.
 #'
 #' @importFrom sf st_write st_cast st_transform
-#' @importFrom DBI dbExecute
+#' @importFrom DBI dbExecute dbDisconnect
 #' @importFrom glue glue
 #'
 #' @return text
@@ -224,6 +312,8 @@ upsert_hydro_swaths <- function(dataset = hydro_swaths,
   st_write(obj = hydro_swaths, dsn = db_con, layer = table_name, append = TRUE)
 
   rows_insert <- nrow(hydro_swaths)
+
+  dbDisconnect(db_con)
 
   return(glue::glue("{table_name} updated with {rows_insert} inserted"))
 }

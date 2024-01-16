@@ -53,7 +53,7 @@ prepare_landcover_area <- function(dataset = input_landcover){
 #' @param db_con DBI database connection.
 #'
 #' @importFrom glue glue
-#' @importFrom DBI dbExecute
+#' @importFrom DBI dbExecute dbDisconnect
 #'
 #' @return text
 #' @export
@@ -61,7 +61,7 @@ create_table_landcover_area <- function(table_name = "landcover_area",
                                         db_con){
   query <- glue::glue("
     CREATE TABLE public.{table_name} (
-    id SERIAL PRIMARY KEY,
+    id BIGSERIAL PRIMARY KEY,
     side text,
     axis bigint,
     measure_medial_axis bigint,
@@ -88,83 +88,110 @@ create_table_landcover_area <- function(table_name = "landcover_area",
     );")
   dbExecute(db_con, query)
 
-  return(glue::glue("{table_name} has been successfully created"))
-}
-
-
-
-
-
-
-
-
-#' Export landcover area to database
-#'
-#' @param dataset landcover data.frame.
-#' @param table_name database table name.
-#' @param drop_existing_table if destination table remove with CASCADE.
-#' @param db_con DBI connection to database.
-#'
-#' @importFrom dplyr rename_all
-#' @importFrom DBI dbExistsTable dbExecute dbWriteTable
-#' @importFrom glue glue
-#'
-#' @return text
-#' @export
-pg_export_landcover_area <- function(dataset = landcover_area_prepared,
-                                     table_name = "landcover_area",
-                                     drop_existing_table = FALSE,
-                                     db_con){
-
-  landcover_area <- dataset %>%
-    rename_all(clean_column_names) %>%
-    rename(measure_medial_axis = measure)
-
-  table_exist <- dbExistsTable(db_con, table_name)
-  if (table_exist){
-    if (drop_existing_table){
-      query <- glue::glue("DROP TABLE {table_name} CASCADE")
-      dbExecute(db_con, query)
-      cat(glue::glue("{table_name} has been dropped from the database"), "\n")
-      dbWriteTable(conn = db_con, name = table_name,
-                   value = landcover_area)
-      cat(glue::glue("{table_name} has been created"), "\n")
-    }else{
-      stop("Process stopped because the table exists and drop_existing_table is FALSE.")
-    }
-  } else {
-    dbWriteTable(conn = db_con, name = table_name,
-                 value = landcover_area)
-    cat(glue::glue("{table_name} has been created"), "\n")
-  }
-
-  query <- glue::glue("
-    ALTER TABLE {table_name} ADD COLUMN id SERIAL PRIMARY KEY;")
-  dbExecute(db_con, query)
-  cat(query, "\n")
-
-  query <- glue::glue("
-    ALTER TABLE {table_name}
-    ADD COLUMN hydro_swaths_gid int;")
-  dbExecute(db_con, query)
-  cat(query, "\n")
-
-  query <- glue::glue("
-    UPDATE {table_name}
-    SET hydro_swaths_gid = hydro_swaths.gid
-    FROM hydro_swaths
-    WHERE {table_name}.axis = hydro_swaths.axis
-      AND {table_name}.measure_medial_axis = hydro_swaths.measure_medial_axis;")
-  dbExecute(db_con, query)
-  cat(query, "\n")
-
   query <- glue::glue("
     ALTER TABLE {table_name}
     ADD CONSTRAINT fk_{table_name}_hydro_swaths_gid
     FOREIGN KEY(hydro_swaths_gid)
     REFERENCES hydro_swaths(gid);")
   dbExecute(db_con, query)
-  cat(query, "\n")
 
-  return(glue::glue("{table_name} has been successfully set up"))
+  dbDisconnect(db_con)
+
+  return(glue::glue("{table_name} has been successfully created"))
+}
+
+#' Add trigger function to react from landcover_area insert or delete.
+#'
+#' @param db_con DBI connection to database.
+#'
+#' @importFrom DBI dbExecute
+#' @import glue glue
+#'
+#' @return text
+#' @export
+fct_landcover_area_insert_delete_reaction <- function(db_con){
+
+  query <- glue::glue("
+    CREATE OR REPLACE FUNCTION landcover_area_insert_delete_reaction()
+    RETURNS TRIGGER AS $$
+    BEGIN
+      IF TG_OP = 'INSERT' THEN
+        -- update hydro_swaths_gid from landcover_area
+        UPDATE landcover_area
+        SET hydro_swaths_gid =
+          (SELECT hydro_swaths.gid
+          FROM hydro_swaths
+          WHERE hydro_swaths.axis = landcover_area.axis
+           AND hydro_swaths.measure_medial_axis = landcover_area.measure_medial_axis
+          LIMIT 1)
+        WHERE NEW.id = landcover_area.id;
+
+        RETURN NEW;
+
+      END IF;
+
+    END;
+    $$ LANGUAGE plpgsql;")
+
+  dbExecute(db_con, query)
+
+  dbDisconnect(db_con)
+
+  return("landcover_area_insert_delete_reaction function added to database")
+}
+
+#' Create trigger to update tables from landcover_area modifications.
+#'
+#' @param db_con DBI connection to database.
+#'
+#' @importFrom DBI dbExecute dbDisconnect
+#' @import glue glue
+#'
+#' @return text
+#' @export
+trig_landcover_area <- function(db_con){
+
+  query <- glue::glue("
+    CREATE OR REPLACE TRIGGER after_insert_landcover_area
+    AFTER INSERT ON landcover_area
+    FOR EACH ROW
+    EXECUTE FUNCTION landcover_area_insert_delete_reaction();")
+  dbExecute(db_con, query)
+
+  dbDisconnect(db_con)
+
+  return("landcover_area triggers added to database")
+}
+
+#' Delete existing rows and insert landcover area to database.
+#'
+#' @param dataset sf data.frame landcover area.
+#' @param table_name text database table name.
+#' @param db_con DBI connection to database.
+#' @param field_identifier text field identifier name to identified rows to remove.
+#'
+#' @importFrom DBI dbExecute dbWriteTable dbDisconnect
+#' @importFrom glue glue
+#'
+#' @return text
+#' @export
+upsert_landcover_area <- function(dataset = landcover_area,
+                                  table_name = "landcover_area",
+                                  db_con,
+                                  field_identifier = "axis"){
+
+  landcover <- dataset %>%
+    as.data.frame()
+
+  remove_rows(dataset = landcover,
+              field_identifier = field_identifier,
+              table_name = table_name)
+
+  dbWriteTable(conn = db_con, name = table_name, value = landcover, append = TRUE)
+
+  rows_insert <- nrow(landcover)
+
+  dbDisconnect(db_con)
+
+  return(glue::glue("{table_name} updated with {rows_insert} inserted"))
 }

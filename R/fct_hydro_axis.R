@@ -34,7 +34,7 @@ prepare_hydro_axis <- function(referentiel_hydro_dataset = input_referentiel_hyd
 #' @param db_con DBI database connection.
 #'
 #' @importFrom glue glue
-#' @importFrom DBI dbExecute
+#' @importFrom DBI dbExecute dbDisconnect
 #'
 #' @return text
 #' @export
@@ -73,6 +73,8 @@ create_table_hydro_axis <- function(table_name = "hydro_axis",
     ON {table_name} USING btree(gid_region);")
   dbExecute(db_con, query)
 
+  dbDisconnect(db_con)
+
   return(glue::glue("{table_name} has been successfully created"))
 }
 
@@ -85,7 +87,7 @@ create_table_hydro_axis <- function(table_name = "hydro_axis",
 #' @param field_identifier text field identifier name to identified rows to remove.
 #'
 #' @importFrom sf st_write st_cast st_transform
-#' @importFrom DBI dbExecute
+#' @importFrom DBI dbExecute dbDisconnect
 #' @importFrom glue glue
 #'
 #' @return text
@@ -106,6 +108,8 @@ upsert_hydro_axis <- function(dataset = hydro_axis,
   st_write(obj = hydro_axis, dsn = db_con, layer = table_name, append = TRUE)
 
   rows_insert <- nrow(hydro_axis)
+
+  dbDisconnect(db_con)
 
   return(glue::glue("{table_name} updated with {rows_insert} inserted"))
 }

@@ -61,7 +61,7 @@ clean_column_names <- function(names) {
 #' @param field_identifier text field identifier name to identified rows to remove.
 #'
 #' @importFrom glue glue
-#' @importFrom DBI dbExistsTable dbExecute
+#' @importFrom DBI dbExistsTable dbExecute dbDisconnect
 #'
 #' @return text
 #' @export
@@ -79,13 +79,13 @@ set_displayed_bassin_region <- function(table_name,
     UPDATE {table_name}
     SET display = TRUE
     WHERE {field_identifier} in {displayed};")
-    dbExecute(db_con, query)
+    dbExecute(db_con(), query)
 
     query <- glue::glue("
     UPDATE {table_name}
     SET display = FALSE
     WHERE {field_identifier} not in {displayed}; ")
-    dbExecute(db_con, query)
+    dbExecute(db_con(), query)
   } else {
     stop(glue::glue("{table_name} not existing in database."))
   }
@@ -100,7 +100,7 @@ set_displayed_bassin_region <- function(table_name,
 #' @param table_name text database table name.
 #'
 #' @importFrom glue glue
-#' @importFrom DBI dbExecute
+#' @importFrom DBI dbExecute dbDisconnect
 #'
 #' @return text number of row deleted.
 #' @export
@@ -120,7 +120,7 @@ remove_rows <- function(dataset,
     # remove rows in table
     query <- glue::glue("
     DELETE FROM {table_name} WHERE {field_identifier} IN {rows_to_remove};")
-    deleted_rows <- dbExecute(db_con, query)
+    deleted_rows <- dbExecute(db_con(), query)
 
   }else{
     deleted_rows <- 0

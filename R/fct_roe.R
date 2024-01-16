@@ -136,6 +136,8 @@ create_table_roe <- function(table_name = "roe",
     ON {table_name} USING btree(gid_region);")
   dbExecute(db_con, query)
 
+  dbDisconnect(db_con)
+
   return(glue::glue("{table_name} has been successfully created"))
 }
 
@@ -147,7 +149,7 @@ create_table_roe <- function(table_name = "roe",
 #' @param field_identifier text field identifier name to identified rows to remove.
 #'
 #' @importFrom sf st_write st_transform
-#' @importFrom DBI dbExecute
+#' @importFrom DBI dbExecute dbDisconnect dbDisconnect
 #' @importFrom glue glue
 #'
 #' @return text
@@ -168,6 +170,8 @@ upsert_roe <- function(dataset = roe,
   st_write(obj = roe_data, dsn = db_con, layer = table_name, append = TRUE)
 
   rows_insert <- nrow(roe_data)
+
+  dbDisconnect(db_con)
 
   return(glue::glue("{table_name} updated with {rows_insert} inserted"))
 }

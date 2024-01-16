@@ -96,60 +96,56 @@ talweg_metrics <- prepare_talweg_metrics(dataset = input_talweg_metrics)
 
 landcover_area <- prepare_landcover_area(dataset = input_landcover)
 
-hydro_axis <- prepare_hydro_axis(referentiel_hydro_dataset = input_referentiel_hydro,
-                                 hydro_swaths_dataset = hydro_swaths)
-
 hydro_swaths <- prepare_hydro_swaths(swaths_dataset = input_swaths,
                                      referentiel_hydro_dataset = input_referentiel_hydro,
                                      region_hydro = region_hydrographique)
-```
 
-### Database connection
-
-``` r
-db_con <- DBI::dbConnect(RPostgres::Postgres(),
-                        host = Sys.getenv("DBMAPDO_HOST_TEST"),
-                        port = Sys.getenv("DBMAPDO_PORT_TEST"),
-                        dbname = Sys.getenv("DBMAPDO_NAME_TEST"),
-                        user      = Sys.getenv("DBMAPDO_USER_TEST"),
-                        password  = Sys.getenv("DBMAPDO_PASS_TEST"))
+hydro_axis <- prepare_hydro_axis(referentiel_hydro_dataset = input_referentiel_hydro,
+                                 hydro_swaths_dataset = hydro_swaths)
 ```
 
 ### Set database structure
 
 ``` r
 create_table_bassin_hydrographique(table_name = "bassin_hydrographique",
-                                    db_con = db_con)
+                                    db_con = db_con())
 
 create_table_region_hydrographique(table_name = "region_hydrographique",
-                                   db_con = db_con)
+                                   db_con = db_con())
 
 create_table_roe(table_name = "roe",
-                 db_con = db_con)
+                 db_con = db_con())
 
 create_table_hydro_stations(table_name = "hydro_stations",
-                            db_con = db_con)
+                            db_con = db_con())
 
 create_table_talweg_metrics(table_name = "talweg_metrics",
-                            db_con = db_con)
-
-create_table_landcover_area(table_name = "landcover_area",
-                            db_con = db_con)
+                            db_con = db_con())
 
 create_table_hydro_axis(table_name = "hydro_axis",
-                                   db_con = db_con)
+                                   db_con = db_con())
 
 create_table_hydro_swaths(table_name = "hydro_swaths",
-                          db_con = db_con)
+                          db_con = db_con())
+
+create_table_landcover_area(table_name = "landcover_area",
+                            db_con = db_con())
 ```
 
 ### Add functions and triggers to Postgresql database
 
 ``` r
-# Update talweg_metrics_id in hydro_swaths table for delete and insert in hydro_swaths and talweg_metrics
-fct_update_hydro_swaths_talweg_metrics_id(db_con = db_con)
-fct_update_hydro_swaths_talweg_metrics_id_talweg_metrics(db_con = db_con)
-trig_update_talweg_metrics_id(db_con = db_con)
+# hydro_swaths triggers
+fct_hydro_swaths_insert_delete_reaction(db_con = db_con())
+trig_hydro_swaths(db_con = db_con())
+
+# talweg_metrics triggers
+fct_talweg_metrics_insert_delete_reaction(db_con = db_con())
+trig_talweg_metrics(db_con = db_con())
+
+# talweg_metrics triggers
+fct_landcover_area_insert_delete_reaction(db_con = db_con())
+trig_landcover_area(db_con = db_con())
 ```
 
 ### Update and insert database
@@ -157,46 +153,53 @@ trig_update_talweg_metrics_id(db_con = db_con)
 ``` r
 upsert_bassin_hydrographique(dataset = bassin_hydrographique,
                              table_name = "bassin_hydrographique",
-                             db_con = db_con,
+                             db_con = db_con(),
                              field_identifier = "cdbh")
+
 set_displayed_bassin_region(table_name = "bassin_hydrographique",
                             display_codes_bassin_or_region = c("06"),
                             field_identifier = "cdbh",
-                            db_con = db_con)
+                            db_con = db_con())
 
 upsert_region_hydrographique(dataset = region_hydrographique,
                              table_name = "region_hydrographique",
-                             db_con = db_con,
+                             db_con = db_con(),
                              field_identifier = "cdregionhy")
+
 set_displayed_bassin_region(table_name = "region_hydrographique",
                             display_codes_bassin_or_region = c("W"),
                             field_identifier = "cdregionhy",
-                            db_con = db_con)
+                            db_con = db_con())
 
 upsert_roe(dataset = roe,
            table_name = "roe", 
-           db_con = db_con, 
+           db_con = db_con(), 
            field_identifier = "cdobstecou")
 
 upsert_hydro_stations(dataset = hydro_stations,
                       table_name = "hydro_stations",
-                      db_con = db_con,
+                      db_con = db_con(),
                       field_identifier = "code_station")
 
 upsert_talweg_metrics(dataset = talweg_metrics,
                       table_name = "talweg_metrics",
-                      db_con = db_con,
+                      db_con = db_con(),
                       field_identifier = "axis")
 
-upsert_hydro_axis(dataset = hydro_axis,
-                  table_name = "hydro_axis",
-                  db_con,
-                  field_identifier = "axis")
+upsert_landcover_area(dataset = landcover_area,
+                      table_name = "landcover_area",
+                      db_con(),
+                      field_identifier = "axis")
 
 upsert_hydro_swaths(dataset = hydro_swaths,
                     table_name = "hydro_swaths",
-                    db_con = db_con,
+                    db_con = db_con(),
                     field_identifier = "axis")
+
+upsert_hydro_axis(dataset = hydro_axis,
+                  table_name = "hydro_axis",
+                  db_con(),
+                  field_identifier = "axis")
 ```
 
 ### Check swaths
