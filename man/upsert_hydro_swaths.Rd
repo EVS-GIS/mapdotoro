@@ -5,14 +5,14 @@
 \title{Delete existing rows and insert hydrologic network splited by swaths to database.}
 \usage{
 upsert_hydro_swaths(
-  dataset = hydro_swaths_prepared,
+  dataset = hydro_swaths,
   table_name = "hydro_swaths",
   db_con,
   field_identifier = "axis"
 )
 }
 \arguments{
-\item{dataset}{hydrologic network splited sf data.frame.}
+\item{dataset}{sf data.frame hydrologic network splited.}
 
 \item{table_name}{database table name.}
 

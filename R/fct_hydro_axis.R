@@ -1,74 +1,65 @@
-#' Export hydrologic network axis to database
+#' Prepare hydrologic axis dataset to database export.
 #'
-#' @param dataset hydrologic network axis sf data.frame.
-#' @param table_name database table name.
-#' @param drop_existing_table if destination table remove with CASCADE.
-#' @param db_con DBI connection to database.
-#' @param region_hydrographique_file_path file path to region hydrographique dataset.
+#' @param dataset sf data.frame hydro_axis dataset.
 #'
-#' @importFrom dplyr rename_all mutate select
-#' @importFrom sf st_geometry st_write st_read st_join st_within st_transform st_simplify
-#' @importFrom DBI dbExistsTable dbExecute
+#' @importFrom sf st_drop_geometry st_union
+#' @importFrom dplyr select group_by summarise left_join rename_all
+#'
+#' @return sf data.frame
+#' @export
+prepare_hydro_axis <- function(referentiel_hydro_dataset = input_referentiel_hydro,
+                               hydro_swaths_dataset = hydro_swaths){
+
+  # prepare referentiel hydro to join with axis sf data.frame and get TOPONYME
+  referentiel_hydro_no_geom <- referentiel_hydro_dataset %>%
+    st_drop_geometry() %>%
+    group_by(AXIS) %>%
+    select(AXIS, TOPONYME)
+
+  # hydro_axis preparation
+  hydro_axis <- hydro_swaths_dataset %>%
+    group_by(axis) %>%
+    summarise(length = sum(length),
+              gid_region = names(sort(table(gid_region), decreasing = TRUE))[1], # statistical mode
+              geom = st_union(geom)) %>% # union geom and recalculate length
+    left_join(referentiel_hydro_no_geom, by = c("axis" = "AXIS"), multiple = "first") %>% # add TOPONYME field
+    rename_all(clean_column_names)
+
+  return(hydro_axis)
+}
+
+#' Create hydro_axis table structure.
+#'
+#' @param table_name table name.
+#' @param db_con DBI database connection.
+#'
 #' @importFrom glue glue
+#' @importFrom DBI dbExecute
 #'
 #' @return text
 #' @export
-pg_export_hydro_axis <- function(dataset = hydro_axis,
-                                 table_name = "hydro_axis",
-                                 drop_existing_table = FALSE,
-                                 db_con,
-                                 region_hydrographique_file_path = file.path("data-raw",
-                                                                             "raw-datasets",
-                                                                             "region_hydrographique.gpkg")){
-
-  # region hydro is used to perform a spatial join and set gid_region in hubeau stations
-  region_hydro <- st_read(dsn = file.path(region_hydrographique_file_path)) %>%
-    st_transform(crs = 2154)
-  st_geometry(region_hydro) <- "geom" # in case if geometry column name is not "geom"
-
-  hydro_axis <- dataset %>%
-    rename_all(clean_column_names) %>%
-    st_join(region_hydro, join = st_within) %>%
-    mutate(gid_region = gid) %>%
-    select(-colnames(region_hydro)[colnames(region_hydro) != "geom"]) %>%
-    st_simplify(preserveTopology = TRUE, dTolerance = 100) %>%
-    st_transform(crs = 4326)
-
-  st_geometry(hydro_axis) <- "geom" # in case if geometry column name is not "geom"
-
-  table_exist <- dbExistsTable(db_con, table_name)
-  if (table_exist){
-    if (drop_existing_table){
-      query <- glue::glue("DROP TABLE {table_name} CASCADE")
-      dbExecute(db_con, query)
-      cat(glue::glue("{table_name} has been dropped from the database"), "\n")
-      st_write(hydro_axis, db_con, table_name, driver = "PostgreSQL")
-      cat(glue::glue("{table_name} has been created"), "\n")
-    }else{
-      stop("Process stopped because the table exists and drop_existing_table is FALSE.")
-    }
-  } else {
-    st_write(hydro_axis, db_con, table_name, driver = "PostgreSQL")
-    cat(glue::glue("{table_name} has been created"), "\n")
-  }
+create_table_hydro_axis <- function(table_name = "hydro_axis",
+                                               db_con){
+  query <- glue::glue("
+    CREATE TABLE public.{table_name} (
+    gid BIGSERIAL PRIMARY KEY,
+    axis bigint,
+    toponyme text,
+    length double precision,
+    gid_region integer,
+    geom public.geometry(MultiLineString)
+    );")
+  dbExecute(db_con, query)
 
   query <- glue::glue("
-    ALTER TABLE {table_name} ADD COLUMN gid SERIAL PRIMARY KEY;")
+    CREATE INDEX idx_geom_{table_name} ON public.{table_name} USING gist (geom);")
   dbExecute(db_con, query)
-  cat(query, "\n")
 
   query <- glue::glue("
     ALTER TABLE {table_name}
     ADD CONSTRAINT {table_name}_unq_axis
     UNIQUE (axis);")
   dbExecute(db_con, query)
-  cat(query, "\n")
-
-  query <- glue::glue("
-    CREATE INDEX idx_geom_{table_name}
-    ON {table_name} USING GIST (geom);")
-  dbExecute(db_con, query)
-  cat(query, "\n")
 
   query <- glue::glue("
     ALTER TABLE {table_name}
@@ -76,13 +67,45 @@ pg_export_hydro_axis <- function(dataset = hydro_axis,
     FOREIGN KEY(gid_region)
     REFERENCES region_hydrographique(gid);")
   dbExecute(db_con, query)
-  cat(query, "\n")
 
   query <- glue::glue("
     CREATE INDEX idx_gid_region_{table_name}
     ON {table_name} USING btree(gid_region);")
   dbExecute(db_con, query)
-  cat(query, "\n")
 
-  return(glue::glue("{table_name} has been successfully set up"))
+  return(glue::glue("{table_name} has been successfully created"))
+}
+
+
+#' Delete existing rows and insert hydrologic axis to database.
+#'
+#' @param dataset sf data.frame hydrologic axis.
+#' @param table_name database table name.
+#' @param db_con DBI connection to database.
+#' @param field_identifier text field identifier name to identified rows to remove.
+#'
+#' @importFrom sf st_write st_cast st_transform
+#' @importFrom DBI dbExecute
+#' @importFrom glue glue
+#'
+#' @return text
+#' @export
+upsert_hydro_axis <- function(dataset = hydro_axis,
+                                table_name = "hydro_axis",
+                                db_con,
+                                field_identifier = "axis"){
+
+  hydro_axis <- dataset %>%
+    st_cast(to = "MULTILINESTRING") %>%
+    st_transform(4326)
+
+  remove_rows(dataset = hydro_axis,
+              field_identifier = field_identifier,
+              table_name = table_name)
+
+  st_write(obj = hydro_axis, dsn = db_con, layer = table_name, append = TRUE)
+
+  rows_insert <- nrow(hydro_axis)
+
+  return(glue::glue("{table_name} updated with {rows_insert} inserted"))
 }

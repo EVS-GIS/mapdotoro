@@ -96,6 +96,9 @@ talweg_metrics <- prepare_talweg_metrics(dataset = input_talweg_metrics)
 
 landcover_area <- prepare_landcover_area(dataset = input_landcover)
 
+hydro_axis <- prepare_hydro_axis(referentiel_hydro_dataset = input_referentiel_hydro,
+                                 hydro_swaths_dataset = hydro_swaths)
+
 hydro_swaths <- prepare_hydro_swaths(swaths_dataset = input_swaths,
                                      referentiel_hydro_dataset = input_referentiel_hydro,
                                      region_hydro = region_hydrographique)
@@ -132,6 +135,9 @@ create_table_talweg_metrics(table_name = "talweg_metrics",
 
 create_table_landcover_area(table_name = "landcover_area",
                             db_con = db_con)
+
+create_table_hydro_axis(table_name = "hydro_axis",
+                                   db_con = db_con)
 
 create_table_hydro_swaths(table_name = "hydro_swaths",
                           db_con = db_con)
@@ -181,6 +187,11 @@ upsert_talweg_metrics(dataset = talweg_metrics,
                       table_name = "talweg_metrics",
                       db_con = db_con,
                       field_identifier = "axis")
+
+upsert_hydro_axis(dataset = hydro_axis,
+                  table_name = "hydro_axis",
+                  db_con,
+                  field_identifier = "axis")
 
 upsert_hydro_swaths(dataset = hydro_swaths,
                     table_name = "hydro_swaths",
