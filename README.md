@@ -203,6 +203,11 @@ upsert_landcover_area(dataset = landcover_area,
                       table_name = "landcover_area",
                       db_con(),
                       field_identifier = "axis")
+
+upsert_continuity_area(dataset = continuity_area,
+                      table_name = "continuity_area",
+                      db_con(),
+                      field_identifier = "axis")
 ```
 
 ### Check swaths

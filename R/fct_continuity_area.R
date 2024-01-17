@@ -164,3 +164,36 @@ trig_continuity_area <- function(db_con,
 
   return(cat(glue::glue("{table_name} triggers added to database"), "\n"))
 }
+
+#' Delete existing rows and insert continuity area to database.
+#'
+#' @param dataset sf data.frame continuity area.
+#' @param table_name text database table name.
+#' @param db_con DBI connection to database.
+#' @param field_identifier text field identifier name to identified rows to remove.
+#'
+#' @importFrom DBI dbExecute dbWriteTable dbDisconnect
+#' @importFrom glue glue
+#'
+#' @return text
+#' @export
+upsert_continuity_area <- function(dataset = continuity_area,
+                                  table_name = "continuity_area",
+                                  db_con,
+                                  field_identifier = "axis"){
+
+  continuity <- dataset %>%
+    as.data.frame()
+
+  remove_rows(dataset = continuity,
+              field_identifier = field_identifier,
+              table_name = table_name)
+
+  dbWriteTable(conn = db_con, name = table_name, value = continuity, append = TRUE)
+
+  rows_insert <- nrow(continuity)
+
+  dbDisconnect(db_con)
+
+  return(glue::glue("{table_name} updated with {rows_insert} inserted"))
+}
