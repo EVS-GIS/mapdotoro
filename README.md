@@ -98,6 +98,8 @@ landcover_area <- prepare_landcover_area(dataset = input_landcover)
 
 continuity_area <- prepare_continuity_area(dataset = input_continuity)
 
+continuity_width <- prepare_continuity_width(dataset = input_continuity)
+
 hydro_swaths_and_axis <- prepare_hydro_swaths_and_axis(swaths_dataset = input_swaths,
                                                        referentiel_hydro_dataset = input_referentiel_hydro,
                                                        region_hydro = region_hydrographique)
@@ -132,6 +134,9 @@ create_table_landcover_area(table_name = "landcover_area",
 
 create_table_continuity_area(table_name = "continuity_area",
                             db_con = db_con())
+
+create_table_continuity_width(table_name = "continuity_width",
+                            db_con = db_con())
 ```
 
 ### Add functions and triggers to Postgresql database
@@ -152,6 +157,10 @@ trig_landcover_area(db_con = db_con(), table_name = "landcover_area")
 # continuity_area triggers
 fct_continuity_area_insert_delete_reaction(db_con = db_con(), table_name = "continuity_area")
 trig_continuity_area(db_con = db_con(), table_name = "continuity_area")
+
+# continuity_width triggers
+fct_continuity_width_insert_delete_reaction(db_con = db_con(), table_name = "continuity_width")
+trig_continuity_width(db_con = db_con(), table_name = "continuity_width")
 ```
 
 ### Update and insert database
@@ -206,6 +215,11 @@ upsert_landcover_area(dataset = landcover_area,
 
 upsert_continuity_area(dataset = continuity_area,
                       table_name = "continuity_area",
+                      db_con(),
+                      field_identifier = "axis")
+
+upsert_continuity_width(dataset = continuity_width,
+                      table_name = "continuity_width",
                       db_con(),
                       field_identifier = "axis")
 ```

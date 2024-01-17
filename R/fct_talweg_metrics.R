@@ -57,7 +57,7 @@ create_table_talweg_metrics <- function(table_name = "talweg_metrics",
     ALTER TABLE {table_name}
     ADD CONSTRAINT fk_{table_name}_hydro_swaths_gid
     FOREIGN KEY(hydro_swaths_gid)
-    REFERENCES hydro_swaths(gid) ON DELETE CASCADE;")
+    REFERENCES hydro_swaths(gid) ON DELETE SET NULL;")
   dbExecute(db_con, query)
 
   dbDisconnect(db_con)

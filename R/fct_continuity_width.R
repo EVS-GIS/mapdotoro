@@ -1,53 +1,53 @@
-#' Prepare landcover area to database export.
+#' Prepare continuity width to database export.
 #'
-#' @param dataset data.frame landcover imported.
+#' @param dataset data.frame continuity imported.
 #'
 #' @importFrom dplyr filter rename_all rename
 #'
-#' @return data.frame landcover area prepared.
+#' @return data.frame continuity width prepared.
 #' @export
-prepare_landcover_area <- function(dataset = input_landcover){
+prepare_continuity_width <- function(dataset = input_continuity){
 
-  landcover_area_prepared <- pivot_landcover_continuity_area(dataset) %>%
+  continuity_width_prepared <- pivot_continuity_width(dataset) %>%
     rename_all(clean_column_names) %>%
     rename(measure_medial_axis = measure)
 
   # check for duplicate (should not print red L'axe axe_number a des doublons !)
-  landcover_area_prepared_left <- landcover_area_prepared %>%
+  continuity_width_prepared_left <- continuity_width_prepared %>%
     filter(side == "left")
 
   cat("check duplicated for left side", "\n")
-  landcover_area_duplicated_left <- check_duplicate(dataset = landcover_area_prepared_left,
-                                                    axis_field = "axis",
-                                                    measure_field = "measure_medial_axis")
+  continuity_width_duplicated_left <- check_duplicate(dataset = continuity_width_prepared_left,
+                                                     axis_field = "axis",
+                                                     measure_field = "measure_medial_axis")
   # clean dataset if duplicated found
-  if (nrow(landcover_area_duplicated_left$duplicated_rows)>0){
-    clean_duplicated(landcover_area_prepared,
-                     landcover_area_duplicated_left$duplicated_rows,
+  if (nrow(continuity_width_duplicated_left$duplicated_rows)>0){
+    clean_duplicated(continuity_width_prepared,
+                     continuity_width_duplicated_left$duplicated_rows,
                      axis_field = "axis",
                      measure_field = "measure_medial_axis")
   }
 
-  landcover_area_prepared_right <- landcover_area_prepared %>%
+  continuity_width_prepared_right <- continuity_width_prepared %>%
     filter(side == "right")
 
   cat("check duplicated for right side", "\n")
-  landcover_area_duplicated_right <- check_duplicate(dataset = landcover_area_prepared_right,
-                                                     axis_field = "axis",
-                                                     measure_field = "measure_medial_axis")
+  continuity_width_duplicated_right <- check_duplicate(dataset = continuity_width_prepared_right,
+                                                      axis_field = "axis",
+                                                      measure_field = "measure_medial_axis")
 
   # clean dataset if duplicated found
-  if (nrow(landcover_area_duplicated_right$duplicated_rows)>0){
-    clean_duplicated(landcover_area_prepared,
-                     landcover_area_duplicated_right$duplicated_rows,
+  if (nrow(continuity_width_duplicated_right$duplicated_rows)>0){
+    clean_duplicated(continuity_width_prepared,
+                     continuity_width_duplicated_right$duplicated_rows,
                      axis_field = "axis",
                      measure_field = "measure_medial_axis")
   }
 
-  return(landcover_area_prepared)
+  return(continuity_width_prepared)
 }
 
-#' Create landcover_area table structure.
+#' Create continuity_width table structure.
 #'
 #' @param table_name table name.
 #' @param db_con DBI database connection.
@@ -57,33 +57,31 @@ prepare_landcover_area <- function(dataset = input_landcover){
 #'
 #' @return text
 #' @export
-create_table_landcover_area <- function(table_name = "landcover_area",
-                                        db_con){
+create_table_continuity_width <- function(table_name = "continuity_width",
+                                         db_con){
   query <- glue::glue("
     CREATE TABLE public.{table_name} (
     id BIGSERIAL PRIMARY KEY,
     side text,
-    axis bigint,
-    measure_medial_axis bigint,
+    axis double precision,
+    measure_medial_axis double precision,
     water_channel double precision,
-    gravel_bars double precision,
-    natural_open double precision,
-    forest double precision,
-    grassland double precision,
-    crops double precision,
-    diffuse_urban double precision,
-    dense_urban double precision,
-    infrastructures double precision,
-    sum_area double precision,
+    active_channel double precision,
+    riparian_buffer double precision,
+    connected_meadows double precision,
+    connected_cultivated double precision,
+    disconnected double precision,
+    built double precision,
+    no_data double precision,
+    sum_width double precision,
     water_channel_pc double precision,
-    gravel_bars_pc double precision,
-    natural_open_pc double precision,
-    forest_pc double precision,
-    grassland_pc double precision,
-    crops_pc double precision,
-    diffuse_urban_pc double precision,
-    dense_urban_pc double precision,
-    infrastructures_pc double precision,
+    active_channel_pc double precision,
+    riparian_buffer_pc double precision,
+    connected_meadows_pc double precision,
+    connected_cultivated_pc double precision,
+    disconnected_pc double precision,
+    built_pc double precision,
+    no_data_pc double precision,
     hydro_swaths_gid bigint
     );")
   dbExecute(db_con, query)
@@ -92,7 +90,7 @@ create_table_landcover_area <- function(table_name = "landcover_area",
     ALTER TABLE {table_name}
     ADD CONSTRAINT fk_{table_name}_hydro_swaths_gid
     FOREIGN KEY(hydro_swaths_gid)
-    REFERENCES hydro_swaths(gid) ON DELETE CASCADE;")
+    REFERENCES hydro_swaths(gid) ON DELETE SET NULL;")
   dbExecute(db_con, query)
 
   dbDisconnect(db_con)
@@ -100,7 +98,7 @@ create_table_landcover_area <- function(table_name = "landcover_area",
   return(glue::glue("{table_name} has been successfully created"))
 }
 
-#' Add trigger function to react from landcover_area insert or delete.
+#' Add trigger function to react from continuity_width insert or delete.
 #'
 #' @param db_con DBI connection to database.
 #' @param table_name table name.
@@ -110,8 +108,8 @@ create_table_landcover_area <- function(table_name = "landcover_area",
 #'
 #' @return text
 #' @export
-fct_landcover_area_insert_delete_reaction <- function(db_con,
-                                                      table_name = "landcover_area"){
+fct_continuity_width_insert_delete_reaction <- function(db_con,
+                                                       table_name = "continuity_width"){
 
   query <- glue::glue("
     CREATE OR REPLACE FUNCTION {table_name}_insert_delete_reaction()
@@ -142,7 +140,7 @@ fct_landcover_area_insert_delete_reaction <- function(db_con,
   return(cat(glue::glue("{table_name}_insert_delete_reaction function added to database"), "\n"))
 }
 
-#' Create trigger to update tables from landcover_area modifications.
+#' Create trigger to update tables from continuity_width modifications.
 #'
 #' @param db_con DBI connection to database.
 #' @param table_name table name.
@@ -152,8 +150,8 @@ fct_landcover_area_insert_delete_reaction <- function(db_con,
 #'
 #' @return text
 #' @export
-trig_landcover_area <- function(db_con,
-                                table_name = "landcover_area"){
+trig_continuity_width <- function(db_con,
+                                 table_name = "continuity_width"){
 
   query <- glue::glue("
     CREATE OR REPLACE TRIGGER after_insert_{table_name}
@@ -167,9 +165,9 @@ trig_landcover_area <- function(db_con,
   return(cat(glue::glue("{table_name} triggers added to database"), "\n"))
 }
 
-#' Delete existing rows and insert landcover area to database.
+#' Delete existing rows and insert continuity width to database.
 #'
-#' @param dataset sf data.frame landcover area.
+#' @param dataset sf data.frame continuity width.
 #' @param table_name text database table name.
 #' @param db_con DBI connection to database.
 #' @param field_identifier text field identifier name to identified rows to remove.
@@ -179,21 +177,21 @@ trig_landcover_area <- function(db_con,
 #'
 #' @return text
 #' @export
-upsert_landcover_area <- function(dataset = landcover_area,
-                                  table_name = "landcover_area",
-                                  db_con,
-                                  field_identifier = "axis"){
+upsert_continuity_width <- function(dataset = continuity_width,
+                                   table_name = "continuity_width",
+                                   db_con,
+                                   field_identifier = "axis"){
 
-  landcover <- dataset %>%
+  continuity <- dataset %>%
     as.data.frame()
 
-  remove_rows(dataset = landcover,
+  remove_rows(dataset = continuity,
               field_identifier = field_identifier,
               table_name = table_name)
 
-  dbWriteTable(conn = db_con, name = table_name, value = landcover, append = TRUE)
+  dbWriteTable(conn = db_con, name = table_name, value = continuity, append = TRUE)
 
-  rows_insert <- nrow(landcover)
+  rows_insert <- nrow(continuity)
 
   dbDisconnect(db_con)
 

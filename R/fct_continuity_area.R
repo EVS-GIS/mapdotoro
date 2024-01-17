@@ -8,7 +8,7 @@
 #' @export
 prepare_continuity_area <- function(dataset = input_continuity){
 
-  continuity_area_prepared <- prepare_landcover_continuity_area(dataset) %>%
+  continuity_area_prepared <- pivot_landcover_continuity_area(dataset) %>%
     rename_all(clean_column_names) %>%
     rename(measure_medial_axis = measure)
 
@@ -90,7 +90,7 @@ create_table_continuity_area <- function(table_name = "continuity_area",
     ALTER TABLE {table_name}
     ADD CONSTRAINT fk_{table_name}_hydro_swaths_gid
     FOREIGN KEY(hydro_swaths_gid)
-    REFERENCES hydro_swaths(gid) ON DELETE CASCADE;")
+    REFERENCES hydro_swaths(gid) ON DELETE SET NULL;")
   dbExecute(db_con, query)
 
   dbDisconnect(db_con)

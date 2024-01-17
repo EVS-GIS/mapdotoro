@@ -11,9 +11,9 @@
 #' @export
 #'
 #' @examples
-#' landcover_prepared <- prepare_landcover_continuity_area(landcover)
-prepare_landcover_continuity_area <- function(dataset){
-  # pivot landcover label on area_ha
+#' landcover_prepared <- pivot_landcover_continuity_area(landcover)
+pivot_landcover_continuity_area <- function(dataset){
+  # pivot dataset label on area_ha
   landcover_prepared <- dataset %>%
     mutate(area_ha = area/10000) %>%  # convert m2 to ha
     select(label, side, area_ha, axis, measure) %>%
@@ -32,6 +32,41 @@ prepare_landcover_continuity_area <- function(dataset){
   }
 
   return(landcover_prepared)
+}
+
+#' Prepare continuity dataset to have width for each label
+#'
+#' @param dataset A continuity data.frame.
+#'
+#' @importFrom dplyr mutate select rename_with rename sym
+#' @importFrom tidyr pivot_wider
+#' @importFrom stringr str_replace_all
+#' @importFrom tidyselect everything
+#'
+#' @return data.frame
+#' @export
+#'
+#' @examples
+#' landcover_prepared <- pivot_continuity_width(input_continuity)
+pivot_continuity_width <- function(dataset){
+  # pivot dataset label on width1
+  continuity_prepared <- dataset %>%
+    select(label, side, width1, axis, measure) %>%
+    pivot_wider(names_from = label, values_from = width1) %>%
+    mutate(sum_width = rowSums(select(., unique(dataset$label)), na.rm = TRUE)) # add sum for all surface in swaths
+
+  # create columns with width in % of the total surface
+  for (label in unique(dataset$label)){
+    col_name <- paste0(label,"_pc")
+    continuity_prepared <- continuity_prepared %>%
+      mutate({{col_name}} := ifelse(is.na(!!sym(label)) |
+                                      is.na(sum_width) |
+                                      sum_width == 0, NA,
+                                    !!sym(label) /
+                                      sum_width*100))
+  }
+
+  return(continuity_prepared)
 }
 
 #' Format column names
