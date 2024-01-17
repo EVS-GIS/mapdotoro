@@ -232,6 +232,9 @@ landcover_full_side_view(db_con = db_con(), view_name = "landcover_area_full_sid
 continuity_full_side_view(db_con = db_con(), view_name = "continuity_area_full_side")
 
 continuity_full_side_view_geom(db_con = db_con(), view_name = "continuity_area_full_side_geom")
+
+continuity_width_full_side_view_geom(db_con = db_con(), view_name = "continuity_width_full_side_geom",
+                                     continuity_table_name ="continuity_width")
 ```
 
 
