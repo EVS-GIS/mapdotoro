@@ -213,9 +213,11 @@ upsert_continuity_area(dataset = continuity_area,
 ### Create view for mapdoapp
 
 ``` r
-network_metrics_view(db_con = db_con, view_name = "network_metrics")
+network_metrics_view(db_con = db_con(), view_name = "network_metrics")
 
-landcover_full_side_view(db_con = db_con, view_name = "landcover_area_full_side")
+landcover_full_side_view(db_con = db_con(), view_name = "landcover_area_full_side")
 
-continuity_full_side_view(db_con = db_con, view_name = "continuity_area_full_side")
+continuity_full_side_view(db_con = db_con(), view_name = "continuity_area_full_side")
+
+continuity_full_side_view_geom(db_con = db_con(), view_name = "continuity_area_full_side_geom")
 ```
