@@ -104,6 +104,8 @@ continuity_area <- prepare_continuity_area(dataset = input_continuity)
 
 continuity_width <- prepare_continuity_width(dataset = input_continuity)
 
+valley_bottom <- prepare_valley_bottom(dataset = input_valley_bottom)
+
 hydro_swaths_and_axis <- prepare_hydro_swaths_and_axis(swaths_dataset = input_swaths,
                                                        referentiel_hydro_dataset = input_referentiel_hydro,
                                                        region_hydro = region_hydrographique)
@@ -136,10 +138,13 @@ create_table_landcover_area(table_name = "landcover_area",
                             db_con = db_con())
 
 create_table_continuity_area(table_name = "continuity_area",
-                            db_con = db_con())
+                             db_con = db_con())
 
 create_table_continuity_width(table_name = "continuity_width",
-                            db_con = db_con())
+                              db_con = db_con())
+
+create_table_valley_bottom(table_name = "valley_bottom",
+                           db_con = db_con())
 ```
 ### Add functions and triggers to Postgresql database
 ```{r, eval=FALSE}
