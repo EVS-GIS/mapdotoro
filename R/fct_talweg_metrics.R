@@ -42,7 +42,8 @@ create_table_talweg_metrics <- function(table_name = "talweg_metrics",
     slope_valley_bottom double precision,
     axis bigint,
     measure_medial_axis bigint,
-    sinuosity double precision
+    sinuosity double precision,
+    hydro_swaths_gid bigint
     );")
   dbExecute(db_con, query)
 
@@ -50,6 +51,13 @@ create_table_talweg_metrics <- function(table_name = "talweg_metrics",
     ALTER TABLE {table_name}
     ADD CONSTRAINT {table_name}_unq_axis_measure
     UNIQUE (axis, measure_medial_axis);")
+  dbExecute(db_con, query)
+
+  query <- glue::glue("
+    ALTER TABLE {table_name}
+    ADD CONSTRAINT fk_{table_name}_hydro_swaths_gid
+    FOREIGN KEY(hydro_swaths_gid)
+    REFERENCES hydro_swaths(gid) ON DELETE CASCADE;")
   dbExecute(db_con, query)
 
   dbDisconnect(db_con)
@@ -73,21 +81,17 @@ fct_talweg_metrics_insert_delete_reaction <- function(db_con){
     RETURNS TRIGGER AS $$
     BEGIN
       IF TG_OP = 'INSERT' THEN
-        -- update talweg_metrics_id from hydro_swaths
-        UPDATE hydro_swaths
-        SET talweg_metrics_id = NEW.id
-        WHERE hydro_swaths.axis = NEW.axis
-          AND hydro_swaths.measure_medial_axis = NEW.measure_medial_axis;
+        -- update hydro_swaths_gid from talweg_metrics
+        UPDATE talweg_metrics
+        SET hydro_swaths_gid =
+          (SELECT gid
+          FROM hydro_swaths
+          WHERE hydro_swaths.axis = NEW.AXIS
+            AND hydro_swaths.measure_medial_axis = NEW.measure_medial_axis
+          LIMIT 1)
+          WHERE NEW.id = talweg_metrics.id;
 
         RETURN NEW;
-
-      ELSIF TG_OP = 'DELETE' THEN
-        -- set talweg_metrics_id to NULL from hydro_swaths
-        UPDATE hydro_swaths
-        SET talweg_metrics_id = NULL
-        WHERE OLD.id = hydro_swaths.talweg_metrics_id;
-
-        RETURN OLD;
 
       END IF;
 
@@ -115,13 +119,6 @@ trig_talweg_metrics <- function(db_con){
   query <- glue::glue("
     CREATE OR REPLACE TRIGGER aftet_insert_talweg_metrics
     AFTER INSERT ON talweg_metrics
-    FOR EACH ROW
-    EXECUTE FUNCTION talweg_metrics_insert_delete_reaction();")
-  dbExecute(db_con, query)
-
-  query <- glue::glue("
-    CREATE OR REPLACE TRIGGER before_delete_talweg_metrics
-    BEFORE DELETE ON talweg_metrics
     FOR EACH ROW
     EXECUTE FUNCTION talweg_metrics_insert_delete_reaction();")
   dbExecute(db_con, query)

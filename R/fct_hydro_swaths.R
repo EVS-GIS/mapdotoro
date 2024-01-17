@@ -159,7 +159,6 @@ create_table_hydro_swaths <- function(table_name = "hydro_swaths",
     length double precision,
     strahler integer,
     gid_region integer,
-    talweg_metrics_id integer,
     geom public.geometry(LineString)
     );")
   dbExecute(db_con, query)
@@ -180,13 +179,6 @@ create_table_hydro_swaths <- function(table_name = "hydro_swaths",
     ADD CONSTRAINT fk_{table_name}_gid_region
     FOREIGN KEY(gid_region)
     REFERENCES region_hydrographique(gid);")
-  dbExecute(db_con, query)
-
-  query <- glue::glue("
-    ALTER TABLE {table_name}
-    ADD CONSTRAINT fk_{table_name}_talweg_metrics_id
-    FOREIGN KEY(talweg_metrics_id)
-    REFERENCES talweg_metrics(id);")
   dbExecute(db_con, query)
 
   query <- glue::glue("
@@ -218,15 +210,11 @@ fct_hydro_swaths_insert_delete_reaction <- function(db_con){
     BEGIN
       IF TG_OP = 'INSERT' THEN
 
-        -- update talweg_metrics_id from hydro_swaths
-        UPDATE hydro_swaths
-        SET talweg_metrics_id =
-          (SELECT talweg_metrics.id
-          FROM talweg_metrics
-          WHERE hydro_swaths.axis = talweg_metrics.axis
-            AND hydro_swaths.measure_medial_axis = talweg_metrics.measure_medial_axis
-          LIMIT 1)
-        WHERE NEW.gid = hydro_swaths.gid;
+        -- update hydro_swaths_gid from talweg_metrics
+        UPDATE talweg_metrics
+        SET hydro_swaths_gid = NEW.gid
+        WHERE NEW.axis = talweg_metrics.axis
+           AND NEW.measure_medial_axis = talweg_metrics.measure_medial_axis;
 
         -- update hydro_swaths_gid from landcover_area
         UPDATE landcover_area
@@ -235,15 +223,6 @@ fct_hydro_swaths_insert_delete_reaction <- function(db_con){
            AND NEW.measure_medial_axis = landcover_area.measure_medial_axis;
 
         RETURN NEW;
-
-      ELSIF TG_OP = 'DELETE' THEN
-
-        -- set hydro_swaths_gid to NULL from landcover_area
-        UPDATE landcover_area
-        SET hydro_swaths_gid = NULL
-        WHERE OLD.gid = landcover_area.hydro_swaths_gid;
-
-        RETURN OLD;
 
       END IF;
 
@@ -271,13 +250,6 @@ trig_hydro_swaths <- function(db_con){
   query <- glue::glue("
     CREATE OR REPLACE TRIGGER after_insert_hydro_swaths
     AFTER INSERT ON hydro_swaths
-    FOR EACH ROW
-    EXECUTE FUNCTION hydro_swaths_insert_delete_reaction();")
-  dbExecute(db_con, query)
-
-  query <- glue::glue("
-    CREATE OR REPLACE TRIGGER after_delete_hydro_swaths
-    BEFORE DELETE ON hydro_swaths
     FOR EACH ROW
     EXECUTE FUNCTION hydro_swaths_insert_delete_reaction();")
   dbExecute(db_con, query)
@@ -323,7 +295,7 @@ upsert_hydro_swaths_and_axis <- function(hydro_swaths_dataset = hydro_swaths,
       FROM {hydro_swaths_table_name}
       WHERE axis = {axis};")
     count <- dbGetQuery(db_con, query)$count
-    cat(glue::glue("{hydro_swaths_table_name} : {count} deleted matching {axis} axis"), "\n")
+    cat(glue::glue("{hydro_swaths_table_name} : {count} deleted matching {axis} axis and matching metrics, landcover and continuity"), "\n")
   }
 
   # remove row from hydro_axis AND the matching axis in hydro_swaths (foreign key with on DELETE CASCADE!)

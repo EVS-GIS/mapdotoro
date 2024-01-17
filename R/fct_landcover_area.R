@@ -92,7 +92,7 @@ create_table_landcover_area <- function(table_name = "landcover_area",
     ALTER TABLE {table_name}
     ADD CONSTRAINT fk_{table_name}_hydro_swaths_gid
     FOREIGN KEY(hydro_swaths_gid)
-    REFERENCES hydro_swaths(gid);")
+    REFERENCES hydro_swaths(gid) ON DELETE CASCADE;")
   dbExecute(db_con, query)
 
   dbDisconnect(db_con)
