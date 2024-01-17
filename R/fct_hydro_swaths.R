@@ -9,9 +9,9 @@
 #' @importFrom qgisprocess qgis_run_algorithm_p
 #' @importFrom lwgeom st_split
 #'
-#' @return sf data.frame
+#' @return list with two sf data.frame
 #' @export
-prepare_hydro_swaths <- function(swaths_dataset = input_swaths,
+prepare_hydro_swaths_and_axis <- function(swaths_dataset = input_swaths,
                                  referentiel_hydro_dataset = input_referentiel_hydro,
                                  region_hydro = region_hydrographique){
 
@@ -129,7 +129,12 @@ prepare_hydro_swaths <- function(swaths_dataset = input_swaths,
     mutate(gid_region = gid) %>%
     select(-colnames(region_hydro)[colnames(region_hydro) != "geom"]) # remove region_hydro columns
 
-  return(hydro_swaths_prepared)
+  #### prepare axis ####
+  hydro_axis <- prepare_hydro_axis(referentiel_hydro_dataset = referentiel_hydro_dataset,
+                                   hydro_swaths_dataset = hydro_swaths_prepared)
+
+  return(list(hydro_swaths = hydro_swaths_prepared,
+              hydro_axis = hydro_axis))
 }
 
 #' Create hydro_swaths table structure
@@ -188,9 +193,8 @@ create_table_hydro_swaths <- function(table_name = "hydro_swaths",
     ALTER TABLE {table_name}
     ADD CONSTRAINT fk_{table_name}_axis
     FOREIGN KEY(axis)
-    REFERENCES hydro_axis(axis);")
+    REFERENCES hydro_axis(axis) ON DELETE CASCADE;")
   dbExecute(db_con, query)
-  cat(query, "\n")
 
   dbDisconnect(db_con)
 
@@ -291,29 +295,53 @@ trig_hydro_swaths <- function(db_con){
 #' @param field_identifier text field identifier name to identified rows to remove.
 #'
 #' @importFrom sf st_write st_cast st_transform
-#' @importFrom DBI dbExecute dbDisconnect
+#' @importFrom DBI dbExecute dbDisconnect dbGetQuery
 #' @importFrom glue glue
 #'
 #' @return text
 #' @export
-upsert_hydro_swaths <- function(dataset = hydro_swaths,
-                                table_name = "hydro_swaths",
-                                db_con,
-                                field_identifier = "axis"){
+upsert_hydro_swaths_and_axis <- function(hydro_swaths_dataset = hydro_swaths,
+                                         hydro_swaths_table_name = "hydro_swaths",
+                                         hydro_axis_dataset = hydro_swaths,
+                                         hydro_axis_table_name = "hydro_axis",
+                                         db_con,
+                                         field_identifier = "axis"){
 
-  hydro_swaths <- dataset %>%
+  hydro_swaths <- hydro_swaths_dataset %>%
     st_cast(to = "LINESTRING") %>%
     st_transform(4326)
 
-  remove_rows(dataset = hydro_swaths,
+  hydro_axis <- hydro_axis_dataset %>%
+    st_cast(to = "MULTILINESTRING") %>%
+    st_transform(4326)
+
+  # information about the rows deleted in hydro_swaths
+  axis_removed <- unique(hydro_axis[[field_identifier]])
+  for (axis in axis_removed){
+    query <- glue::glue("
+      SELECT count(*)
+      FROM {hydro_swaths_table_name}
+      WHERE axis = {axis};")
+    count <- dbGetQuery(db_con, query)$count
+    cat(glue::glue("{hydro_swaths_table_name} : {count} deleted matching {axis} axis"), "\n")
+  }
+
+  # remove row from hydro_axis AND the matching axis in hydro_swaths (foreign key with on DELETE CASCADE!)
+  remove_rows(dataset = hydro_axis,
               field_identifier = field_identifier,
-              table_name = table_name)
+              table_name = hydro_axis_table_name)
 
-  st_write(obj = hydro_swaths, dsn = db_con, layer = table_name, append = TRUE)
+  # INSERT hydro axis
+  st_write(obj = hydro_axis, dsn = db_con, layer = hydro_axis_table_name, append = TRUE)
 
-  rows_insert <- nrow(hydro_swaths)
+  # INSERT hydro_swaths
+  st_write(obj = hydro_swaths, dsn = db_con, layer = hydro_swaths_table_name, append = TRUE)
+
+  hydro_axis_rows_insert <- nrow(hydro_axis)
+  hydro_swaths_rows_insert <- nrow(hydro_swaths)
 
   dbDisconnect(db_con)
 
-  return(glue::glue("{table_name} updated with {rows_insert} inserted"))
+  return(glue::glue("{hydro_axis_table_name} updated with {hydro_axis_rows_insert} inserted
+                    {hydro_swaths_table_name} updated with {hydro_swaths_rows_insert} inserted"))
 }

@@ -126,7 +126,7 @@ remove_rows <- function(dataset,
     deleted_rows <- 0
   }
 
-  return(cat("Row deleted :",toString(deleted_rows), "\n"))
+  return(cat(glue::glue("{table_name} : {toString(deleted_rows)} rows deleted"), "\n"))
 }
 
 #' Check for duplicate measure in streams axis.

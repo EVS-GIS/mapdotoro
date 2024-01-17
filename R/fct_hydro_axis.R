@@ -39,7 +39,7 @@ prepare_hydro_axis <- function(referentiel_hydro_dataset = input_referentiel_hyd
 #' @return text
 #' @export
 create_table_hydro_axis <- function(table_name = "hydro_axis",
-                                               db_con){
+                                    db_con){
   query <- glue::glue("
     CREATE TABLE public.{table_name} (
     gid BIGSERIAL PRIMARY KEY,
@@ -76,40 +76,4 @@ create_table_hydro_axis <- function(table_name = "hydro_axis",
   dbDisconnect(db_con)
 
   return(glue::glue("{table_name} has been successfully created"))
-}
-
-
-#' Delete existing rows and insert hydrologic axis to database.
-#'
-#' @param dataset sf data.frame hydrologic axis.
-#' @param table_name database table name.
-#' @param db_con DBI connection to database.
-#' @param field_identifier text field identifier name to identified rows to remove.
-#'
-#' @importFrom sf st_write st_cast st_transform
-#' @importFrom DBI dbExecute dbDisconnect
-#' @importFrom glue glue
-#'
-#' @return text
-#' @export
-upsert_hydro_axis <- function(dataset = hydro_axis,
-                                table_name = "hydro_axis",
-                                db_con,
-                                field_identifier = "axis"){
-
-  hydro_axis <- dataset %>%
-    st_cast(to = "MULTILINESTRING") %>%
-    st_transform(4326)
-
-  remove_rows(dataset = hydro_axis,
-              field_identifier = field_identifier,
-              table_name = table_name)
-
-  st_write(obj = hydro_axis, dsn = db_con, layer = table_name, append = TRUE)
-
-  rows_insert <- nrow(hydro_axis)
-
-  dbDisconnect(db_con)
-
-  return(glue::glue("{table_name} updated with {rows_insert} inserted"))
 }
