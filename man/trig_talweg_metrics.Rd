@@ -4,10 +4,12 @@
 \alias{trig_talweg_metrics}
 \title{Create trigger to update tables from talweg_metrics modifications.}
 \usage{
-trig_talweg_metrics(db_con)
+trig_talweg_metrics(db_con, table_name = "talweg_metrics")
 }
 \arguments{
 \item{db_con}{DBI connection to database.}
+
+\item{table_name}{table name.}
 }
 \value{
 text

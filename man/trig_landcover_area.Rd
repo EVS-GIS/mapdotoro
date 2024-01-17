@@ -4,10 +4,12 @@
 \alias{trig_landcover_area}
 \title{Create trigger to update tables from landcover_area modifications.}
 \usage{
-trig_landcover_area(db_con)
+trig_landcover_area(db_con, table_name = "landcover_area")
 }
 \arguments{
 \item{db_con}{DBI connection to database.}
+
+\item{table_name}{table name.}
 }
 \value{
 text

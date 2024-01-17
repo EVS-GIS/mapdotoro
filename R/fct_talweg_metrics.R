@@ -68,28 +68,30 @@ create_table_talweg_metrics <- function(table_name = "talweg_metrics",
 #' Add trigger function to react from talweg_metrics insert or delete.
 #'
 #' @param db_con DBI connection to database.
+#' @param table_name table name.
 #'
 #' @importFrom DBI dbExecute dbDisconnect
 #' @import glue glue
 #'
 #' @return text
 #' @export
-fct_talweg_metrics_insert_delete_reaction <- function(db_con){
+fct_talweg_metrics_insert_delete_reaction <- function(db_con,
+                                                      table_name = "talweg_metrics"){
 
   query <- glue::glue("
-    CREATE OR REPLACE FUNCTION talweg_metrics_insert_delete_reaction()
+    CREATE OR REPLACE FUNCTION {table_name}_insert_delete_reaction()
     RETURNS TRIGGER AS $$
     BEGIN
       IF TG_OP = 'INSERT' THEN
-        -- update hydro_swaths_gid from talweg_metrics
-        UPDATE talweg_metrics
+        -- update hydro_swaths_gid from {table_name}
+        UPDATE {table_name}
         SET hydro_swaths_gid =
           (SELECT gid
           FROM hydro_swaths
           WHERE hydro_swaths.axis = NEW.AXIS
             AND hydro_swaths.measure_medial_axis = NEW.measure_medial_axis
           LIMIT 1)
-          WHERE NEW.id = talweg_metrics.id;
+          WHERE NEW.id = {table_name}.id;
 
         RETURN NEW;
 
@@ -102,30 +104,32 @@ fct_talweg_metrics_insert_delete_reaction <- function(db_con){
 
   dbDisconnect(db_con)
 
-  return("talweg_metrics_insert_delete_reaction function added to database")
+  return(cat(glue::glue("{table_name}_insert_delete_reaction function added to database"), "\n"))
 }
 
 #' Create trigger to update tables from talweg_metrics modifications.
 #'
 #' @param db_con DBI connection to database.
+#' @param table_name table name.
 #'
 #' @importFrom DBI dbExecute dbDisconnect
 #' @import glue glue
 #'
 #' @return text
 #' @export
-trig_talweg_metrics <- function(db_con){
+trig_talweg_metrics <- function(db_con,
+                                table_name = "talweg_metrics"){
 
   query <- glue::glue("
-    CREATE OR REPLACE TRIGGER aftet_insert_talweg_metrics
-    AFTER INSERT ON talweg_metrics
+    CREATE OR REPLACE TRIGGER aftet_insert_{table_name}
+    AFTER INSERT ON {table_name}
     FOR EACH ROW
-    EXECUTE FUNCTION talweg_metrics_insert_delete_reaction();")
+    EXECUTE FUNCTION {table_name}_insert_delete_reaction();")
   dbExecute(db_con, query)
 
   dbDisconnect(db_con)
 
-  return("talweg_metrics triggers added to database")
+  return(cat(glue::glue("{table_name} triggers added to database"), "\n"))
 }
 
 #' Delete existing rows and insert talweg metrics to database.

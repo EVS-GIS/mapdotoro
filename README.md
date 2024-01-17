@@ -138,16 +138,20 @@ create_table_continuity_area(table_name = "continuity_area",
 
 ``` r
 # hydro_swaths triggers
-fct_hydro_swaths_insert_delete_reaction(db_con = db_con())
-trig_hydro_swaths(db_con = db_con())
+fct_hydro_swaths_insert_delete_reaction(db_con = db_con(), table_name = "hydro_swaths")
+trig_hydro_swaths(db_con = db_con(), table_name = "hydro_swaths")
 
 # talweg_metrics triggers
-fct_talweg_metrics_insert_delete_reaction(db_con = db_con())
-trig_talweg_metrics(db_con = db_con())
+fct_talweg_metrics_insert_delete_reaction(db_con = db_con(), table_name = "talweg_metrics")
+trig_talweg_metrics(db_con = db_con(), table_name = "talweg_metrics")
 
-# talweg_metrics triggers
-fct_landcover_area_insert_delete_reaction(db_con = db_con())
-trig_landcover_area(db_con = db_con())
+# landcover_area triggers
+fct_landcover_area_insert_delete_reaction(db_con = db_con(), table_name = "landcover_area")
+trig_landcover_area(db_con = db_con(), table_name = "landcover_area")
+
+# continuity_area triggers
+fct_continuity_area_insert_delete_reaction(db_con = db_con(), table_name = "continuity_area")
+trig_continuity_area(db_con = db_con(), table_name = "continuity_area")
 ```
 
 ### Update and insert database

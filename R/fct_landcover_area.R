@@ -103,28 +103,30 @@ create_table_landcover_area <- function(table_name = "landcover_area",
 #' Add trigger function to react from landcover_area insert or delete.
 #'
 #' @param db_con DBI connection to database.
+#' @param table_name table name.
 #'
 #' @importFrom DBI dbExecute
 #' @import glue glue
 #'
 #' @return text
 #' @export
-fct_landcover_area_insert_delete_reaction <- function(db_con){
+fct_landcover_area_insert_delete_reaction <- function(db_con,
+                                                      table_name = "landcover_area"){
 
   query <- glue::glue("
-    CREATE OR REPLACE FUNCTION landcover_area_insert_delete_reaction()
+    CREATE OR REPLACE FUNCTION {table_name}_insert_delete_reaction()
     RETURNS TRIGGER AS $$
     BEGIN
       IF TG_OP = 'INSERT' THEN
-        -- update hydro_swaths_gid from landcover_area
-        UPDATE landcover_area
+        -- update hydro_swaths_gid from {table_name}
+        UPDATE {table_name}
         SET hydro_swaths_gid =
           (SELECT hydro_swaths.gid
           FROM hydro_swaths
-          WHERE hydro_swaths.axis = landcover_area.axis
-           AND hydro_swaths.measure_medial_axis = landcover_area.measure_medial_axis
+          WHERE hydro_swaths.axis = {table_name}.axis
+           AND hydro_swaths.measure_medial_axis = {table_name}.measure_medial_axis
           LIMIT 1)
-        WHERE NEW.id = landcover_area.id;
+        WHERE NEW.id = {table_name}.id;
 
         RETURN NEW;
 
@@ -137,30 +139,32 @@ fct_landcover_area_insert_delete_reaction <- function(db_con){
 
   dbDisconnect(db_con)
 
-  return("landcover_area_insert_delete_reaction function added to database")
+  return(cat(glue::glue("{table_name}_insert_delete_reaction function added to database"), "\n"))
 }
 
 #' Create trigger to update tables from landcover_area modifications.
 #'
 #' @param db_con DBI connection to database.
+#' @param table_name table name.
 #'
 #' @importFrom DBI dbExecute dbDisconnect
 #' @import glue glue
 #'
 #' @return text
 #' @export
-trig_landcover_area <- function(db_con){
+trig_landcover_area <- function(db_con,
+                                table_name = "landcover_area"){
 
   query <- glue::glue("
-    CREATE OR REPLACE TRIGGER after_insert_landcover_area
-    AFTER INSERT ON landcover_area
+    CREATE OR REPLACE TRIGGER after_insert_{table_name}
+    AFTER INSERT ON {table_name}
     FOR EACH ROW
-    EXECUTE FUNCTION landcover_area_insert_delete_reaction();")
+    EXECUTE FUNCTION {table_name}_insert_delete_reaction();")
   dbExecute(db_con, query)
 
   dbDisconnect(db_con)
 
-  return("landcover_area triggers added to database")
+  return(cat(glue::glue("{table_name} triggers added to database"), "\n"))
 }
 
 #' Delete existing rows and insert landcover area to database.

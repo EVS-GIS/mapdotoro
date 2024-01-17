@@ -4,10 +4,12 @@
 \alias{fct_hydro_swaths_insert_delete_reaction}
 \title{Add trigger function to react from hydro_swaths insert or delete}
 \usage{
-fct_hydro_swaths_insert_delete_reaction(db_con)
+fct_hydro_swaths_insert_delete_reaction(db_con, table_name = "hydro_swaths")
 }
 \arguments{
 \item{db_con}{DBI connection to database.}
+
+\item{table_name}{table name.}
 }
 \value{
 text

@@ -4,10 +4,12 @@
 \alias{trig_hydro_swaths}
 \title{Create trigger to update tables from hydro_swaths modifications.}
 \usage{
-trig_hydro_swaths(db_con)
+trig_hydro_swaths(db_con, table_name = "hydro_swaths")
 }
 \arguments{
 \item{db_con}{DBI connection to database.}
+
+\item{table_name}{table name.}
 }
 \value{
 text

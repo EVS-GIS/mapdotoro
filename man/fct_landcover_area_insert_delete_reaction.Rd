@@ -4,10 +4,15 @@
 \alias{fct_landcover_area_insert_delete_reaction}
 \title{Add trigger function to react from landcover_area insert or delete.}
 \usage{
-fct_landcover_area_insert_delete_reaction(db_con)
+fct_landcover_area_insert_delete_reaction(
+  db_con,
+  table_name = "landcover_area"
+)
 }
 \arguments{
 \item{db_con}{DBI connection to database.}
+
+\item{table_name}{table name.}
 }
 \value{
 text

@@ -196,29 +196,31 @@ create_table_hydro_swaths <- function(table_name = "hydro_swaths",
 #' Add trigger function to react from hydro_swaths insert or delete
 #'
 #' @param db_con DBI connection to database.
+#' @param table_name table name.
 #'
 #' @importFrom DBI dbExecute dbDisconnect
 #' @import glue glue
 #'
 #' @return text
 #' @export
-fct_hydro_swaths_insert_delete_reaction <- function(db_con){
+fct_hydro_swaths_insert_delete_reaction <- function(db_con,
+                                                    table_name = "hydro_swaths"){
 
   query <- glue::glue("
-    CREATE OR REPLACE FUNCTION hydro_swaths_insert_delete_reaction()
+    CREATE OR REPLACE FUNCTION {table_name}_insert_delete_reaction()
     RETURNS TRIGGER AS $$
     BEGIN
       IF TG_OP = 'INSERT' THEN
 
-        -- update hydro_swaths_gid from talweg_metrics
+        -- update {table_name}_gid from talweg_metrics
         UPDATE talweg_metrics
-        SET hydro_swaths_gid = NEW.gid
+        SET {table_name}_gid = NEW.gid
         WHERE NEW.axis = talweg_metrics.axis
            AND NEW.measure_medial_axis = talweg_metrics.measure_medial_axis;
 
-        -- update hydro_swaths_gid from landcover_area
+        -- update {table_name}_gid from landcover_area
         UPDATE landcover_area
-        SET hydro_swaths_gid = NEW.gid
+        SET {table_name}_gid = NEW.gid
         WHERE NEW.axis = landcover_area.axis
            AND NEW.measure_medial_axis = landcover_area.measure_medial_axis;
 
@@ -233,30 +235,32 @@ fct_hydro_swaths_insert_delete_reaction <- function(db_con){
 
   dbDisconnect(db_con)
 
-  return("hydro_swaths_insert_delete_reaction function added to database")
+  return(cat(glue::glue("{table_name}_insert_delete_reaction function added to database"), "\n"))
 }
 
 #' Create trigger to update tables from hydro_swaths modifications.
 #'
 #' @param db_con DBI connection to database.
+#' @param table_name table name.
 #'
 #' @importFrom DBI dbExecute dbDisconnect
 #' @import glue glue
 #'
 #' @return text
 #' @export
-trig_hydro_swaths <- function(db_con){
+trig_hydro_swaths <- function(db_con,
+                              table_name = "hydro_swaths"){
 
   query <- glue::glue("
-    CREATE OR REPLACE TRIGGER after_insert_hydro_swaths
-    AFTER INSERT ON hydro_swaths
+    CREATE OR REPLACE TRIGGER after_insert_{table_name}
+    AFTER INSERT ON {table_name}
     FOR EACH ROW
-    EXECUTE FUNCTION hydro_swaths_insert_delete_reaction();")
+    EXECUTE FUNCTION {table_name}_insert_delete_reaction();")
   dbExecute(db_con, query)
 
   dbDisconnect(db_con)
 
-  return("hydro_swaths triggers added to database")
+  return(cat(glue::glue("{table_name} triggers added to database"), "\n"))
 }
 
 #' Delete existing rows and insert hydrologic network splited by swaths to database.

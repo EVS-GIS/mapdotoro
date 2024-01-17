@@ -4,10 +4,15 @@
 \alias{fct_talweg_metrics_insert_delete_reaction}
 \title{Add trigger function to react from talweg_metrics insert or delete.}
 \usage{
-fct_talweg_metrics_insert_delete_reaction(db_con)
+fct_talweg_metrics_insert_delete_reaction(
+  db_con,
+  table_name = "talweg_metrics"
+)
 }
 \arguments{
 \item{db_con}{DBI connection to database.}
+
+\item{table_name}{table name.}
 }
 \value{
 text
