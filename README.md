@@ -76,7 +76,7 @@ input_referentiel_hydro <- st_read(dsn = file.path("data-raw", "raw-datasets", "
 input_swaths <- st_read(dsn = file.path("data-raw", "raw-datasets", "SWATHS_MEDIALAXIS.shp"))
 
 input_landcover <- readr::read_csv(file.path("data-raw", "raw-datasets", "WIDTH_LANDCOVER.csv"))
-continuity <- readr::read_csv(file.path("data-raw", "raw-datasets", "WIDTH_CONTINUITY.csv"))
+input_continuity <- readr::read_csv(file.path("data-raw", "raw-datasets", "WIDTH_CONTINUITY.csv"))
 ```
 
 ### Prepare dataset
@@ -95,6 +95,8 @@ hydro_stations <- prepare_hydro_stations(dataset = input_hydro_stations,
 talweg_metrics <- prepare_talweg_metrics(dataset = input_talweg_metrics)
 
 landcover_area <- prepare_landcover_area(dataset = input_landcover)
+
+continuity_area <- prepare_continuity_area(dataset = input_continuity)
 
 hydro_swaths_and_axis <- prepare_hydro_swaths_and_axis(swaths_dataset = input_swaths,
                                                        referentiel_hydro_dataset = input_referentiel_hydro,
@@ -126,6 +128,9 @@ create_table_talweg_metrics(table_name = "talweg_metrics",
                             db_con = db_con())
 
 create_table_landcover_area(table_name = "landcover_area",
+                            db_con = db_con())
+
+create_table_continuity_area(table_name = "continuity_area",
                             db_con = db_con())
 ```
 
