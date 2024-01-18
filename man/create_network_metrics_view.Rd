@@ -4,7 +4,7 @@
 \alias{create_network_metrics_view}
 \title{Create network metrics view for mapdoapp application.}
 \usage{
-create_network_metrics_view(db_con, view_name)
+create_network_metrics_view(db_con, view_name = "network_metrics")
 }
 \arguments{
 \item{db_con}{DBI connection to database.}

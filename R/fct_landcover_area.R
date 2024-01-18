@@ -210,7 +210,7 @@ upsert_landcover_area <- function(dataset = landcover_area,
 #'
 #' @return text
 #' @export
-create_landcover_area_full_side_view <- function(db_con, view_name = "landcover_area_full_side"){
+create_landcover_area_full_side_matview <- function(db_con, view_name = "landcover_area_full_side"){
   query <- glue::glue("
     DO $$
     DECLARE

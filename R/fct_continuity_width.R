@@ -208,11 +208,11 @@ upsert_continuity_width <- function(dataset = continuity_width,
 #'
 #' @return text
 #' @export
-create_continuity_width_full_side_view <- function(db_con, view_name = "continuity_width_full_side"){
+create_continuity_width_full_side_matview <- function(db_con, view_name = "continuity_width_full_side"){
   query <- glue::glue("
     DO $$
     DECLARE
-        landcover text;
+        continuity text;
         query text;
     BEGIN
         query := 'CREATE MATERIALIZED VIEW {view_name} AS
@@ -223,13 +223,13 @@ create_continuity_width_full_side_view <- function(db_con, view_name = "continui
                       ';
 
         -- Constructing the SELECT part of the query with SUM left and right side
-        FOR landcover IN (SELECT column_name FROM information_schema.columns
+        FOR continuity IN (SELECT column_name FROM information_schema.columns
     						WHERE table_name = 'continuity_width'
     							AND column_name NOT IN ('axis', 'measure_medial_axis',
     												'side', 'id', 'hydro_swaths_gid'))
     	-- Concatenate the query
         LOOP
-            query := query || 'SUM(' || landcover || ') AS ' || landcover || ', ';
+            query := query || 'SUM(' || continuity || ') AS ' || continuity || ', ';
         END LOOP;
 
         -- Removing the trailing comma and space

@@ -274,27 +274,84 @@ trig_hydro_swaths <- function(db_con,
 #' @return text
 #' @export
 create_network_metrics_view <- function(db_con,
-                                        view_name){
+                                        view_name = "network_metrics"){
   query <- glue::glue("
   CREATE OR REPLACE VIEW {view_name} AS
     SELECT
-    hydro_swaths.gid AS fid,
-    hydro_swaths.axis,
-    hydro_swaths.measure_from_outlet AS measure,
-    hydro_axis.toponyme,
-    hydro_swaths.strahler,
-    talweg_metrics.elevation_talweg,
-    continuity_width.active_channel
+        hydro_swaths.gid AS fid,
+        hydro_swaths.axis AS axis,
+      	hydro_swaths.gid_region AS gid_region,
+      	hydro_swaths.measure_medial_axis AS measure_medial_axis,
+        hydro_swaths.measure_from_outlet AS measure,
+        hydro_axis.toponyme AS toponyme,
+        hydro_swaths.strahler AS strahler,
+        talweg_metrics.elevation_talweg AS talweg_elevation_min,
+      	-- width
+      	CASE
+      	 	WHEN valley_bottom_full_side.width <> 0
+      		THEN ((continuity_width_full_side.water_channel +
+      	 			continuity_width_full_side.active_channel)/
+      			valley_bottom_full_side.width)
+      		ELSE NULL
+      	END AS idx_confinement,
+      	valley_bottom_full_side.width AS valley_bottom_width,
+      	continuity_width_full_side.water_channel AS continuity_water_channel, -- remove this
+          continuity_width_full_side.water_channel +
+      		continuity_width_full_side.active_channel AS active_channel_width, -- see WidthCorridor2 from FCT
+      	continuity_width_full_side.riparian_buffer AS natural_corridor_width,
+      	continuity_width_full_side.riparian_buffer +
+      		continuity_width_full_side.connected_meadows +
+      		continuity_width_full_side.connected_cultivated AS connected_corridor_width,
+      	-- slope
+      	talweg_metrics.slope_talweg AS talweg_slope,
+      	talweg_metrics.slope_valley_bottom AS floodplain_slope,
+      	-- area
+      	landcover_area_full_side.water_channel AS water_channel,
+      	landcover_area_full_side.gravel_bars AS gravel_bars,
+      	landcover_area_full_side.natural_open AS natural_open,
+      	landcover_area_full_side.forest AS forest,
+      	landcover_area_full_side.grassland AS grassland,
+      	landcover_area_full_side.crops AS crops,
+      	landcover_area_full_side.diffuse_urban AS diffuse_urban,
+      	landcover_area_full_side.dense_urban AS dense_urban,
+      	landcover_area_full_side.infrastructures AS infrastructures,
+      	continuity_area_full_side.active_channel AS active_channel,
+      	continuity_area_full_side.riparian_buffer AS riparian_corridor,
+      	continuity_area_full_side.connected_meadows AS semi_natural,
+      	continuity_area_full_side.connected_cultivated AS reversible,
+      	continuity_area_full_side.disconnected AS disconnected,
+      	continuity_area_full_side.built AS built_environment,
+      	-- area percent
+      	landcover_area_full_side.water_channel_pc AS water_channel_pc,
+      	landcover_area_full_side.gravel_bars_pc AS gravel_bars_pc,
+      	landcover_area_full_side.natural_open_pc AS natural_open_pc,
+      	landcover_area_full_side.forest_pc AS forest_pc,
+      	landcover_area_full_side.grassland_pc AS grassland_pc,
+      	landcover_area_full_side.crops_pc AS crops_pc,
+      	landcover_area_full_side.diffuse_urban_pc AS diffuse_urban_pc,
+      	landcover_area_full_side.dense_urban_pc AS dense_urban_pc,
+      	landcover_area_full_side.infrastructures_pc AS infrastructures_pc,
+      	continuity_area_full_side.active_channel_pc AS active_channel_pc,
+      	continuity_area_full_side.riparian_buffer_pc AS riparian_corridor_pc,
+      	continuity_area_full_side.connected_meadows_pc AS semi_natural_pc,
+      	continuity_area_full_side.connected_cultivated_pc AS reversible_pc,
+      	continuity_area_full_side.disconnected AS disconnected_pc,
+      	continuity_area_full_side.built_pc AS built_environment_pc,
+      	continuity_area_full_side.sum_area,
+      	ST_SetSRID(hydro_swaths.geom, 4326)::geometry AS geom
     FROM hydro_swaths
     LEFT JOIN hydro_axis ON hydro_axis.axis = hydro_swaths.axis
     LEFT JOIN talweg_metrics ON talweg_metrics.hydro_swaths_gid = hydro_swaths.gid
-    LEFT JOIN continuity_width ON continuity_width.hydro_swaths_gid = hydro_swaths.gid
+    LEFT JOIN continuity_width_full_side ON continuity_width_full_side.hydro_swaths_gid = hydro_swaths.gid
+    LEFT JOIN valley_bottom_full_side ON valley_bottom_full_side.hydro_swaths_gid = hydro_swaths.gid
+    LEFT JOIN landcover_area_full_side ON landcover_area_full_side.hydro_swaths_gid = hydro_swaths.gid
+    LEFT JOIN continuity_area_full_side ON continuity_area_full_side.hydro_swaths_gid = hydro_swaths.gid
     ")
   dbExecute(db_con, query)
 
   dbDisconnect(db_con)
 
-  return(cat(glue::glue("{view_name} triggers added to database"), "\n"))
+  return(cat(glue::glue("{view_name} view added to database"), "\n"))
 }
 
 #' Delete existing rows and insert hydrologic network splited by swaths to database.
