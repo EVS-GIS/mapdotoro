@@ -29,7 +29,7 @@ You can install the development version of mapdotoro from [GitHub](https://githu
 devtools::install_github("EVS-GIS/mapdotoro")
 ```
 
-mapdotro use qgisprocess package, [QGIS](https://www.qgis.org/en/site/) with the [Fluvial Corridor Toolbox](https://github.com/EVS-GIS/fct-qgis) plugin installed.
+mapdotoro use qgisprocess package, [QGIS](https://www.qgis.org/en/site/) with the [Fluvial Corridor Toolbox](https://github.com/EVS-GIS/fct-qgis) plugin installed.
 
 Tested with QGIS version 3.28.13 and Fluvial Corridor Toolbox version 1.0.11.
 
