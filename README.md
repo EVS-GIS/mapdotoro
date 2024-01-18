@@ -251,27 +251,3 @@ upsert_valley_bottom(dataset = valley_bottom,
 
 refresh_all_materialized_views(db_con = db_con())
 ```
-
-### Create view for mapdoapp
-
-``` r
-
-
-
-
-
-
-
-
-
-network_metrics_view(db_con = db_con(), view_name = "network_metrics")
-
-landcover_full_side_view(db_con = db_con(), view_name = "landcover_area_full_side")
-
-continuity_full_side_view(db_con = db_con(), view_name = "continuity_area_full_side")
-
-continuity_full_side_view_geom(db_con = db_con(), view_name = "continuity_area_full_side_geom")
-
-continuity_width_full_side_view_geom(db_con = db_con(), view_name = "continuity_width_full_side_geom",
-                                     continuity_table_name ="continuity_width")
-```
