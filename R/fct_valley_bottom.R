@@ -198,44 +198,18 @@ upsert_valley_bottom <- function(dataset = valley_bottom,
 #' @export
 create_valley_bottom_full_side_matview <- function(db_con, view_name = "valley_bottom_full_side"){
   query <- glue::glue("
-    DO $$
-    DECLARE
-        valley text;
-        query text;
-    BEGIN
-        query := 'CREATE MATERIALIZED VIEW {view_name} AS
-                  SELECT
-                      axis,
-                      measure_medial_axis,
-                      hydro_swaths_gid,
-                      ';
-
-        -- Constructing the SELECT part of the query with SUM left and right side
-        FOR valley IN (SELECT column_name FROM information_schema.columns
-    						WHERE table_name = 'valley_bottom'
-    							AND column_name NOT IN ('axis', 'measure_medial_axis',
-    												'side', 'id', 'hydro_swaths_gid'))
-    	-- Concatenate the query
-        LOOP
-            query := query || 'SUM(' || valley || ') AS ' || valley || ', ';
-        END LOOP;
-
-        -- Removing the trailing comma and space
-        query := LEFT(query, LENGTH(query) - 2);
-
-        -- Adding the FROM and GROUP BY parts of the query
-        query := query || '
-                  FROM
-                      valley_bottom
-                  GROUP BY
-                      axis,
-                      measure_medial_axis,
-                      hydro_swaths_gid';
-
-        -- RAISE NOTICE 'Query: %', query;
-
-        EXECUTE query;
-    END $$;
+  CREATE MATERIALIZED VIEW {view_name} AS
+    SELECT
+    	axis,
+    	measure_medial_axis,
+    	hydro_swaths_gid,
+    	SUM(area) AS area,
+    	SUM(width) AS width
+    FROM valley_bottom
+    GROUP BY
+    	hydro_swaths_gid,
+    	axis,
+    	measure_medial_axis;
     ")
   dbExecute(db_con, query)
 

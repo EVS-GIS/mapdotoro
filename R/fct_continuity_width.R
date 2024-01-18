@@ -210,44 +210,33 @@ upsert_continuity_width <- function(dataset = continuity_width,
 #' @export
 create_continuity_width_full_side_matview <- function(db_con, view_name = "continuity_width_full_side"){
   query <- glue::glue("
-    DO $$
-    DECLARE
-        continuity text;
-        query text;
-    BEGIN
-        query := 'CREATE MATERIALIZED VIEW {view_name} AS
-                  SELECT
-                      axis,
-                      measure_medial_axis,
-                      hydro_swaths_gid,
-                      ';
-
-        -- Constructing the SELECT part of the query with SUM left and right side
-        FOR continuity IN (SELECT column_name FROM information_schema.columns
-    						WHERE table_name = 'continuity_width'
-    							AND column_name NOT IN ('axis', 'measure_medial_axis',
-    												'side', 'id', 'hydro_swaths_gid'))
-    	-- Concatenate the query
-        LOOP
-            query := query || 'SUM(' || continuity || ') AS ' || continuity || ', ';
-        END LOOP;
-
-        -- Removing the trailing comma and space
-        query := LEFT(query, LENGTH(query) - 2);
-
-        -- Adding the FROM and GROUP BY parts of the query
-        query := query || '
-                  FROM
-                      continuity_width
-                  GROUP BY
-                      axis,
-                      measure_medial_axis,
-                      hydro_swaths_gid';
-
-        -- RAISE NOTICE 'Query: %', query;
-
-        EXECUTE query;
-    END $$;
+  CREATE MATERIALIZED VIEW {view_name} AS
+    SELECT
+    	axis,
+    	measure_medial_axis,
+    	hydro_swaths_gid,
+    	SUM(water_channel) AS water_channel,
+    	SUM(active_channel) AS active_channel,
+    	SUM(riparian_buffer) AS riparian_buffer,
+    	SUM(connected_meadows) AS connected_meadows,
+    	SUM(connected_cultivated) AS connected_cultivated,
+    	SUM(disconnected) AS disconnected,
+    	SUM(built) AS built,
+    	SUM(no_data) AS no_data,
+    	SUM(sum_width) AS sum_width,
+    	SUM(water_channel_pc)/2 AS water_channel_pc,
+    	SUM(active_channel_pc)/2 AS active_channel_pc,
+    	SUM(riparian_buffer_pc)/2 AS riparian_buffer_pc,
+    	SUM(connected_meadows_pc)/2 AS connected_meadows_pc,
+    	SUM(connected_cultivated_pc)/2 AS connected_cultivated_pc,
+    	SUM(disconnected_pc)/2 AS disconnected_pc,
+    	SUM(built_pc)/2 AS built_pc,
+    	SUM(no_data_pc)/2 AS no_data_pc
+    FROM continuity_width
+    GROUP BY
+    	hydro_swaths_gid,
+    	axis,
+    	measure_medial_axis;
     ")
   dbExecute(db_con, query)
 

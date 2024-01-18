@@ -212,44 +212,35 @@ upsert_landcover_area <- function(dataset = landcover_area,
 #' @export
 create_landcover_area_full_side_matview <- function(db_con, view_name = "landcover_area_full_side"){
   query <- glue::glue("
-    DO $$
-    DECLARE
-        landcover text;
-        query text;
-    BEGIN
-        query := 'CREATE MATERIALIZED VIEW {view_name} AS
-                  SELECT
-                      axis,
-                      measure_medial_axis,
-                      hydro_swaths_gid,
-                      ';
-
-        -- Constructing the SELECT part of the query with SUM left and right side
-        FOR landcover IN (SELECT column_name FROM information_schema.columns
-    						WHERE table_name = 'landcover_area'
-    							AND column_name NOT IN ('axis', 'measure_medial_axis',
-    												'side', 'id', 'hydro_swaths_gid'))
-    	-- Concatenate the query
-        LOOP
-            query := query || 'SUM(' || landcover || ') AS ' || landcover || ', ';
-        END LOOP;
-
-        -- Removing the trailing comma and space
-        query := LEFT(query, LENGTH(query) - 2);
-
-        -- Adding the FROM and GROUP BY parts of the query
-        query := query || '
-                  FROM
-                      landcover_area
-                  GROUP BY
-                      axis,
-                      measure_medial_axis,
-                      hydro_swaths_gid';
-
-        -- RAISE NOTICE 'Query: %', query;
-
-        EXECUTE query;
-    END $$;
+  CREATE MATERIALIZED VIEW {view_name} AS
+    SELECT
+    	axis,
+    	measure_medial_axis,
+    	hydro_swaths_gid,
+    	SUM(water_channel) AS water_channel,
+    	SUM(gravel_bars) AS gravel_bars,
+    	SUM(natural_open) AS natural_open,
+    	SUM(forest) AS forest,
+    	SUM(grassland) AS grassland,
+    	SUM(crops) AS crops,
+    	SUM(diffuse_urban) AS diffuse_urban,
+    	SUM(dense_urban) AS dense_urban,
+    	SUM(infrastructures) AS infrastructures,
+    	SUM(sum_area) AS sum_area,
+    	SUM(water_channel_pc)/2 AS water_channel_pc,
+    	SUM(gravel_bars_pc)/2 AS gravel_bars_pc,
+    	SUM(natural_open_pc)/2 AS natural_open_pc,
+    	SUM(forest_pc)/2 AS forest_pc,
+    	SUM(grassland_pc)/2 AS grassland_pc,
+    	SUM(crops_pc)/2 AS crops_pc,
+    	SUM(diffuse_urban_pc)/2 AS diffuse_urban_pc,
+    	SUM(dense_urban_pc)/2 AS dense_urban_pc,
+    	SUM(infrastructures_pc)/2 AS infrastructures_pc
+    FROM landcover_area
+    GROUP BY
+    	hydro_swaths_gid,
+    	axis,
+    	measure_medial_axis;
     ")
   dbExecute(db_con, query)
 
