@@ -287,21 +287,22 @@ create_network_metrics_view <- function(db_con,
         hydro_swaths.strahler AS strahler,
         talweg_metrics.elevation_talweg AS talweg_elevation_min,
       	-- width
+      	-- valley_bottom_full_side.width AS valley_bottom_width, wrong values
       	CASE
-      	 	WHEN valley_bottom_full_side.width <> 0
+      	 	WHEN continuity_width_full_side.sum_width <> 0
       		THEN ((continuity_width_full_side.water_channel +
       	 			continuity_width_full_side.active_channel)/
-      			valley_bottom_full_side.width)
+      			continuity_width_full_side.sum_width)
       		ELSE NULL
-      	END AS idx_confinement,
-      	valley_bottom_full_side.width AS valley_bottom_width,
-      	continuity_width_full_side.water_channel AS continuity_water_channel, -- remove this
-          continuity_width_full_side.water_channel +
+      	END AS idx_confinement, -- change with valley_bottom_full_side.width if needed (and fixed)
+      	continuity_width_full_side.water_channel AS water_channel_width,
+        continuity_width_full_side.water_channel +
       		continuity_width_full_side.active_channel AS active_channel_width, -- see WidthCorridor2 from FCT
       	continuity_width_full_side.riparian_buffer AS natural_corridor_width,
       	continuity_width_full_side.riparian_buffer +
       		continuity_width_full_side.connected_meadows +
       		continuity_width_full_side.connected_cultivated AS connected_corridor_width,
+    		continuity_width_full_side.sum_width AS valley_bottom_width,
       	-- slope
       	talweg_metrics.slope_talweg AS talweg_slope,
       	talweg_metrics.slope_valley_bottom AS floodplain_slope,
@@ -343,7 +344,6 @@ create_network_metrics_view <- function(db_con,
     LEFT JOIN hydro_axis ON hydro_axis.axis = hydro_swaths.axis
     LEFT JOIN talweg_metrics ON talweg_metrics.hydro_swaths_gid = hydro_swaths.gid
     LEFT JOIN continuity_width_full_side ON continuity_width_full_side.hydro_swaths_gid = hydro_swaths.gid
-    LEFT JOIN valley_bottom_full_side ON valley_bottom_full_side.hydro_swaths_gid = hydro_swaths.gid
     LEFT JOIN landcover_area_full_side ON landcover_area_full_side.hydro_swaths_gid = hydro_swaths.gid
     LEFT JOIN continuity_area_full_side ON continuity_area_full_side.hydro_swaths_gid = hydro_swaths.gid
     ")
