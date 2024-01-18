@@ -238,3 +238,30 @@ clean_duplicated <- function(dataset,
   cat(nrow(cleaned_dataset), "rows kept,", nrow(duplicated_rows), "removed rows", "\n")
   return(cleaned_dataset)
 }
+
+#' Refresh all the materialized view in public schema database.
+#'
+#' @param db_con DBI connection to database.
+#'
+#' @importFrom DBI dbExecute dbDisconnect
+#'
+#' @return text
+#' @export
+refresh_all_materialized_views <- function(db_con){
+  query <- "
+    DO $$
+      DECLARE
+          view_name text;
+      BEGIN
+          FOR view_name IN (SELECT matviewname FROM pg_matviews WHERE schemaname = 'public')
+          LOOP
+              EXECUTE 'REFRESH MATERIALIZED VIEW ' || view_name;
+          END LOOP;
+    END $$;
+  "
+  dbExecute(db_con, query)
+
+  dbDisconnect(db_con)
+
+  return(cat("All materialized views refreshed", "\n"))
+}

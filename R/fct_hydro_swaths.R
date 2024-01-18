@@ -263,6 +263,40 @@ trig_hydro_swaths <- function(db_con,
   return(cat(glue::glue("{table_name} triggers added to database"), "\n"))
 }
 
+#' Create network metrics view for mapdoapp application.
+#'
+#' @param db_con DBI connection to database.
+#' @param view_name view name.
+#'
+#' @importFrom DBI dbExecute dbDisconnect
+#' @import glue glue
+#'
+#' @return text
+#' @export
+create_network_metrics_view <- function(db_con,
+                                        view_name){
+  query <- glue::glue("
+  CREATE OR REPLACE VIEW {view_name} AS
+    SELECT
+    hydro_swaths.gid AS fid,
+    hydro_swaths.axis,
+    hydro_swaths.measure_from_outlet AS measure,
+    hydro_axis.toponyme,
+    hydro_swaths.strahler,
+    talweg_metrics.elevation_talweg,
+    continuity_width.active_channel
+    FROM hydro_swaths
+    LEFT JOIN hydro_axis ON hydro_axis.axis = hydro_swaths.axis
+    LEFT JOIN talweg_metrics ON talweg_metrics.hydro_swaths_gid = hydro_swaths.gid
+    LEFT JOIN continuity_width ON continuity_width.hydro_swaths_gid = hydro_swaths.gid
+    ")
+  dbExecute(db_con, query)
+
+  dbDisconnect(db_con)
+
+  return(cat(glue::glue("{view_name} triggers added to database"), "\n"))
+}
+
 #' Delete existing rows and insert hydrologic network splited by swaths to database.
 #'
 #' @param dataset sf data.frame hydrologic network splited.
@@ -299,7 +333,7 @@ upsert_hydro_swaths_and_axis <- function(hydro_swaths_dataset = hydro_swaths,
       FROM {hydro_swaths_table_name}
       WHERE axis = {axis};")
     count <- dbGetQuery(db_con, query)$count
-    cat(glue::glue("{hydro_swaths_table_name} : {count} deleted matching {axis} axis and matching metrics, landcover and continuity"), "\n")
+    cat(glue::glue("{hydro_swaths_table_name} : {count} deleted matching {axis} axis"), "\n")
   }
 
   # remove row from hydro_axis AND the matching axis in hydro_swaths (foreign key with on DELETE CASCADE!)

@@ -3,25 +3,28 @@
 #' @param dataset sf data.frame roe.
 #' @param region_hydro sf data.frame hydrographic regions to set spatial join on gid_region.
 #'
-#' @importFrom dplyr select mutate
-#' @importFrom sf st_join st_geometry st_within st_transform
+#' @importFrom dplyr select mutate filter rename left_join rename_all
+#' @importFrom sf st_join st_geometry st_within st_transform st_drop_geometry
 #'
 #' @return sf data.frame
 #' @export
 prepare_roe <- function(dataset = input_roe,
                         region_hydro = region_hydrographique){
 
-  st_geometry(dataset) <- "geom" # in case if geometry column name is not "geom"
-
   roe <- dataset %>%
-    rename_all(clean_column_names) %>%
-    select(-gid) %>%
-    st_transform(2154) %>%
-    st_join(region_hydro, join = st_within) %>%
-    mutate(gid_region = gid) %>%
-    select(-colnames(region_hydro)[colnames(region_hydro) != "geom"])
+    st_transform(2154)
 
-  return(roe)
+  roe_prepared <- region_hydro %>%
+    st_join(roe, join = st_contains, prepared = TRUE) %>% # st_contains with region_hydro far more faster than st_within with roe!
+    filter(!is.na(CdObstEcou)) %>%
+    select(CdObstEcou, gid.x) %>%
+    rename(gid_region = gid.x) %>%
+    st_drop_geometry() %>%
+    left_join(roe, by = "CdObstEcou") %>%
+    rename_all(clean_column_names) %>%
+    st_as_sf()
+
+  return(roe_prepared)
 }
 
 #' Create roe table structure
@@ -39,7 +42,7 @@ create_table_roe <- function(table_name = "roe",
 
   query <- glue::glue("
     CREATE TABLE public.{table_name} (
-    gid SERIAL PRIMARY KEY,
+    gid bigint PRIMARY KEY,
     cdobstecou text,
     stobstecou text,
     cdmodevali text,

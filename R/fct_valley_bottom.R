@@ -4,7 +4,7 @@
 #'
 #' @importFrom dplyr filter rename_all rename select
 #'
-#' @return data.frame continuity width prepared.
+#' @return data.frame valley bottom prepared.
 #' @export
 prepare_valley_bottom <- function(dataset = input_valley_bottom){
 
@@ -84,4 +84,104 @@ create_table_valley_bottom <- function(table_name = "valley_bottom",
   dbDisconnect(db_con)
 
   return(glue::glue("{table_name} has been successfully created"))
+}
+
+#' Add trigger function to react from valley_bottom insert or delete.
+#'
+#' @param db_con DBI connection to database.
+#' @param table_name table name.
+#'
+#' @importFrom DBI dbExecute
+#' @import glue glue
+#'
+#' @return text
+#' @export
+fct_valley_bottom_insert_delete_reaction <- function(db_con,
+                                                     table_name = "valley_bottom"){
+
+  query <- glue::glue("
+    CREATE OR REPLACE FUNCTION {table_name}_insert_delete_reaction()
+    RETURNS TRIGGER AS $$
+    BEGIN
+      IF TG_OP = 'INSERT' THEN
+        -- update hydro_swaths_gid from {table_name}
+        UPDATE {table_name}
+        SET hydro_swaths_gid =
+          (SELECT hydro_swaths.gid
+          FROM hydro_swaths
+          WHERE hydro_swaths.axis = {table_name}.axis
+           AND hydro_swaths.measure_medial_axis = {table_name}.measure_medial_axis
+          LIMIT 1)
+        WHERE NEW.id = {table_name}.id;
+
+        RETURN NEW;
+
+      END IF;
+
+    END;
+    $$ LANGUAGE plpgsql;")
+
+  dbExecute(db_con, query)
+
+  dbDisconnect(db_con)
+
+  return(cat(glue::glue("{table_name}_insert_delete_reaction function added to database"), "\n"))
+}
+
+#' Create trigger to update tables from valley_bottom modifications.
+#'
+#' @param db_con DBI connection to database.
+#' @param table_name table name.
+#'
+#' @importFrom DBI dbExecute dbDisconnect
+#' @import glue glue
+#'
+#' @return text
+#' @export
+trig_valley_bottom <- function(db_con,
+                               table_name = "valley_bottom"){
+
+  query <- glue::glue("
+    CREATE OR REPLACE TRIGGER after_insert_{table_name}
+    AFTER INSERT ON {table_name}
+    FOR EACH ROW
+    EXECUTE FUNCTION {table_name}_insert_delete_reaction();")
+  dbExecute(db_con, query)
+
+  dbDisconnect(db_con)
+
+  return(cat(glue::glue("{table_name} triggers added to database"), "\n"))
+}
+
+#' Delete existing rows and insert valley botom to database.
+#'
+#' @param dataset sf data.frame valley bottom.
+#' @param table_name text database table name.
+#' @param db_con DBI connection to database.
+#' @param field_identifier text field identifier name to identified rows to remove.
+#'
+#' @importFrom DBI dbExecute dbWriteTable dbDisconnect
+#' @importFrom glue glue
+#'
+#' @return text
+#' @export
+upsert_valley_bottom <- function(dataset = valley_bottom,
+                                 table_name = "valley_bottom",
+                                 db_con,
+                                 field_identifier = "axis"){
+
+  valley <- dataset %>%
+    as.data.frame()
+
+  remove_rows(dataset = valley,
+              field_identifier = field_identifier,
+              table_name = table_name)
+
+  dbWriteTable(conn = db_con, name = table_name, value = valley, append = TRUE)
+
+  rows_insert <- nrow(valley)
+
+  dbDisconnect(db_con)
+
+  return(glue::glue("{table_name} updated with {rows_insert} inserted"))
 }

@@ -10,7 +10,7 @@ prepare_valley_bottom(dataset = input_valley_bottom)
 \item{dataset}{data.frame valley_bottom imported.}
 }
 \value{
-data.frame continuity width prepared.
+data.frame valley bottom prepared.
 }
 \description{
 Prepare valley_bottom to database export.
