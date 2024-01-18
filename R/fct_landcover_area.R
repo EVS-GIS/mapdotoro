@@ -200,7 +200,7 @@ upsert_landcover_area <- function(dataset = landcover_area,
   return(glue::glue("{table_name} updated with {rows_insert} inserted"))
 }
 
-#' Create landuse_area_full_side view
+#' Create landcover_area_full_side view
 #'
 #' @param db_con database connection parameters.
 #' @param view_name view name.
@@ -210,7 +210,7 @@ upsert_landcover_area <- function(dataset = landcover_area,
 #'
 #' @return text
 #' @export
-create_landcover_full_side_view <- function(db_con, view_name = "landcover_area_full_side"){
+create_landcover_area_full_side_view <- function(db_con, view_name = "landcover_area_full_side"){
   query <- glue::glue("
     DO $$
     DECLARE
@@ -258,5 +258,5 @@ create_landcover_full_side_view <- function(db_con, view_name = "landcover_area_
     ON {view_name} USING btree(hydro_swaths_gid);")
   dbExecute(db_con, query)
 
-  return(glue::glue("{view_name} view successfully created"))
+  return(glue::glue("{view_name} materialized view successfully created"))
 }

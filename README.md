@@ -177,10 +177,11 @@ trig_valley_bottom(db_con = db_con(), table_name = "valley_bottom")
 ### Create materialized view
 
 ``` r
-create_landcover_full_side_view(db_con = db_con(), view_name = "landcover_area_full_side")
+create_landcover_area_full_side_view(db_con = db_con(), view_name = "landcover_area_full_side")
+create_continuity_width_full_side_view(db_con = db_con(), view_name = "continuity_width_full_side")
 ```
 
-### Update and insert database
+### Update and insert database, refresh materialized view
 
 ``` r
 upsert_bassin_hydrographique(dataset = bassin_hydrographique,
