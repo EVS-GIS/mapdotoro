@@ -10,7 +10,9 @@ prepare_hydro_axis(
 )
 }
 \arguments{
-\item{dataset}{sf data.frame hydro_axis dataset.}
+\item{referentiel_hydro_dataset}{sf data.frame hydro_axis dataset.}
+
+\item{hydro_swaths_dataset}{sf data.frame hydro_swaths dataset prepared.}
 }
 \value{
 sf data.frame

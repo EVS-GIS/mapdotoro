@@ -33,16 +33,15 @@ import_hydro_stations <- function(url = "https://hubeau.eaufrance.fr/api/v1/ecou
 #' @param region_hydro sf data.frame hydrologic regions to set gid_region.
 #'
 #' @importFrom dplyr mutate select
-#' @importFrom sf st_join st_within st_transform
+#' @importFrom sf st_join st_within st_transform st_set_geometry
 #'
 #' @return sf data.frame hydrologic stations prepared.
 #' @export
 prepare_hydro_stations <- function(dataset = input_hydro_stations,
                                    region_hydro = region_hydrographique){
 
-  st_geometry(dataset) <- "geom" # in case if geometry column name is not "geom"
-
   stations <- dataset %>%
+    st_set_geometry("geom") %>%
     rename_all(clean_column_names) %>%
     st_transform(2154) %>%
     st_join(region_hydro, join = st_within) %>%

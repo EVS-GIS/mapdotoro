@@ -14,13 +14,17 @@ upsert_hydro_swaths_and_axis(
 )
 }
 \arguments{
+\item{hydro_swaths_dataset}{sf data.frame hydro swaths prepared.}
+
+\item{hydro_swaths_table_name}{text hydro_swaths table name.}
+
+\item{hydro_axis_dataset}{sf data.frame hydro axis prepared.}
+
+\item{hydro_axis_table_name}{text hydro_axis table name.}
+
 \item{db_con}{DBI connection to database.}
 
 \item{field_identifier}{text field identifier name to identified rows to remove.}
-
-\item{dataset}{sf data.frame hydrologic network splited.}
-
-\item{table_name}{database table name.}
 }
 \value{
 text

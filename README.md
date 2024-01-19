@@ -61,20 +61,20 @@ input_valley_bottom <- valley_bottom
 ### Datasets from the Fluvial Corridor Toolbox
 
 ``` r
-input_bassin_hydrographique <- st_read(dsn = file.path("data-raw", "raw-datasets",
+input_bassin_hydrographique <- sf::st_read(dsn = file.path("data-raw", "raw-datasets",
                                                  "bassin_hydrographique.gpkg"))
 
-input_region_hydrographique <- st_read(dsn = file.path("data-raw", "raw-datasets",
+input_region_hydrographique <- sf::st_read(dsn = file.path("data-raw", "raw-datasets",
                                                  "region_hydrographique.gpkg"))
 
-input_roe <- st_read(dsn = file.path("data-raw", "raw-datasets", "roe.gpkg"))
+input_roe <- sf::st_read(dsn = file.path("data-raw", "raw-datasets", "roe.gpkg"))
 
 input_hydro_stations <- import_hydro_stations(url = "https://hubeau.eaufrance.fr/api/v1/ecoulement/stations?format=json")
 
 input_talweg_metrics <- readr::read_csv(file.path("data-raw", "raw-datasets", "TALWEG_METRICS.csv"))
 
-input_referentiel_hydro <- st_read(dsn = file.path("data-raw", "raw-datasets", "REFERENTIEL_HYDRO.shp"))
-input_swaths <- st_read(dsn = file.path("data-raw", "raw-datasets", "SWATHS_MEDIALAXIS.shp"))
+input_referentiel_hydro <- sf::st_read(dsn = file.path("data-raw", "raw-datasets", "REFERENTIEL_HYDRO.shp"))
+input_swaths <- sf::st_read(dsn = file.path("data-raw", "raw-datasets", "SWATHS_MEDIALAXIS.shp"))
 
 input_landcover <- readr::read_csv(file.path("data-raw", "raw-datasets", "WIDTH_LANDCOVER.csv"))
 input_continuity <- readr::read_csv(file.path("data-raw", "raw-datasets", "WIDTH_CONTINUITY.csv"))

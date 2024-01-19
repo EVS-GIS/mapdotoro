@@ -7,10 +7,10 @@
 #' @export
 db_con <- function(){
   db_con <- DBI::dbConnect(RPostgres::Postgres(),
-                           host = Sys.getenv("DBMAPDO_HOST_TEST"),
-                           port = Sys.getenv("DBMAPDO_PORT_TEST"),
-                           dbname = Sys.getenv("DBMAPDO_NAME_TEST"),
-                           user      = Sys.getenv("DBMAPDO_USER_TEST"),
-                           password  = Sys.getenv("DBMAPDO_PASS_TEST"))
+                           host = Sys.getenv("DBMAPDO_DEV_HOST"),
+                           port = Sys.getenv("DBMAPDO_DEV_PORT"),
+                           dbname = Sys.getenv("DBMAPDO_DEV_NAME"),
+                           user      = Sys.getenv("DBMAPDO_DEV_USER"),
+                           password  = Sys.getenv("DBMAPDO_DEV_PASS"))
   return(db_con)
 }

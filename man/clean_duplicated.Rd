@@ -26,7 +26,3 @@ sf data.frame.
 \description{
 Drop all the duplicated rows from a duplicated sf data.frame.
 }
-\examples{
-clean_duplicated(swaths,
-                 check_duplicate(swaths))
-}

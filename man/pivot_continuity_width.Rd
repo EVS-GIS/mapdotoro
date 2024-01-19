@@ -15,6 +15,3 @@ data.frame
 \description{
 Prepare continuity dataset to have width for each label
 }
-\examples{
-landcover_prepared <- pivot_continuity_width(input_continuity)
-}

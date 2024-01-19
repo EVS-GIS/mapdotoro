@@ -2,15 +2,14 @@
 #'
 #' @param dataset region_hydrographique sf data.frame
 #'
-#' @importFrom sf st_geometry
+#' @importFrom sf st_geometry st_set_geometry
 #'
 #' @return sf data.frame
 #' @export
 prepare_region_hydrographique <- function(dataset = input_region_hydrographique){
 
-  st_geometry(dataset) <- "geom" # in case if geometry column name is not "geom"
-
   region <- dataset %>%
+    st_set_geometry("geom") %>%
     st_transform(2154) %>%
     rename_all(clean_column_names)
 

@@ -15,8 +15,3 @@ A data frame with modified column names.
 \description{
 Format column names
 }
-\examples{
-df <- data.frame("Column.1" = 1:3, "Column 2" = 4:6, "Column-3" = 7:9)
-df \%>\%
-  rename_all(clean_column_names)
-}

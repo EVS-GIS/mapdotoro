@@ -18,6 +18,7 @@ Imports:
     lwgeom,
     magrittr,
     qgisprocess,
+    rlang,
     rmapshaper,
     RPostgres,
     sf,

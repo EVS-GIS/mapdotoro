@@ -15,6 +15,3 @@ data.frame
 \description{
 Prepare landcover or continuity dataset to have area for each label
 }
-\examples{
-landcover_prepared <- pivot_landcover_continuity_area(landcover)
-}

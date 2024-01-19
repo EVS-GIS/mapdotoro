@@ -19,6 +19,3 @@ a list with a sf data.frame with all duplicated rows and a data.frame with the n
 \description{
 Check for duplicate measure in streams axis.
 }
-\examples{
-check_duplicate(swaths)
-}

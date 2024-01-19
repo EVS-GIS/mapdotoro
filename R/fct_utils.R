@@ -6,12 +6,10 @@
 #' @importFrom tidyr pivot_wider
 #' @importFrom stringr str_replace_all
 #' @importFrom tidyselect everything
+#' @importFrom rlang :=
 #'
 #' @return data.frame
 #' @export
-#'
-#' @examples
-#' landcover_prepared <- pivot_landcover_continuity_area(landcover)
 pivot_landcover_continuity_area <- function(dataset){
   # pivot dataset label on area_ha
   landcover_prepared <- dataset %>%
@@ -42,12 +40,10 @@ pivot_landcover_continuity_area <- function(dataset){
 #' @importFrom tidyr pivot_wider
 #' @importFrom stringr str_replace_all
 #' @importFrom tidyselect everything
+#' @importFrom rlang :=
 #'
 #' @return data.frame
 #' @export
-#'
-#' @examples
-#' landcover_prepared <- pivot_continuity_width(input_continuity)
 pivot_continuity_width <- function(dataset){
   # pivot dataset label on width1
   continuity_prepared <- dataset %>%
@@ -75,11 +71,6 @@ pivot_continuity_width <- function(dataset){
 #'
 #' @return A data frame with modified column names.
 #' @export
-#'
-#' @examples
-#' df <- data.frame("Column.1" = 1:3, "Column 2" = 4:6, "Column-3" = 7:9)
-#' df %>%
-#'   rename_all(clean_column_names)
 clean_column_names <- function(names) {
   names %>%
     tolower() %>%
@@ -171,14 +162,11 @@ remove_rows <- function(dataset,
 #' @param measure_field axis stream measure from exutoire.
 #'
 #' @importFrom glue glue
-#' @importFrom dplyr filter
+#' @importFrom dplyr filter count
 #' @importFrom sf st_sf st_drop_geometry
 #'
 #' @return a list with a sf data.frame with all duplicated rows and a data.frame with the number of duplicated by axis.
 #' @export
-#'
-#' @examples
-#' check_duplicate(swaths)
 check_duplicate <- function(dataset,
                             axis_field = "AXIS",
                             measure_field = "M"){
@@ -188,7 +176,7 @@ check_duplicate <- function(dataset,
   # check for duplicate in M field for each axis_selected
   for (axis_selected in unique(dataset[[axis_field]])){
     net_axe <- dataset %>%
-      dplyr::filter(.data[[axis_field]]==axis_selected & !is.na(.data[[measure_field]])) # !is.na to not set NA as duplicate in the axis
+      filter(.data[[axis_field]]==axis_selected & !is.na(.data[[measure_field]])) # !is.na to not set NA as duplicate in the axis
     if (any(duplicated(net_axe[[measure_field]])) ==TRUE){ # if duplicate identified
       duplicate <- glue::glue("L'axe {axis_selected} a des doublons")
       # message(duplicate)
@@ -220,10 +208,6 @@ check_duplicate <- function(dataset,
 #'
 #' @return sf data.frame.
 #' @export
-#'
-#' @examples
-#' clean_duplicated(swaths,
-#'                  check_duplicate(swaths))
 clean_duplicated <- function(dataset,
                              duplicated_dataset,
                              axis_field = "AXIS",

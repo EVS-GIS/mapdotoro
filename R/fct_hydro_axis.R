@@ -1,6 +1,7 @@
 #' Prepare hydrologic axis dataset to database export.
 #'
-#' @param dataset sf data.frame hydro_axis dataset.
+#' @param referentiel_hydro_dataset sf data.frame hydro_axis dataset.
+#' @param hydro_swaths_dataset sf data.frame hydro_swaths dataset prepared.
 #'
 #' @importFrom sf st_drop_geometry st_union
 #' @importFrom dplyr select group_by summarise left_join rename_all
@@ -76,4 +77,32 @@ create_table_hydro_axis <- function(table_name = "hydro_axis",
   dbDisconnect(db_con)
 
   return(glue::glue("{table_name} has been successfully created"))
+}
+
+#' Create network axis view for mapdoapp application.
+#'
+#' @param db_con DBI connection to database.
+#' @param view_name view name.
+#'
+#' @importFrom DBI dbExecute dbDisconnect
+#' @importFrom glue glue
+#'
+#' @return text
+#' @export
+create_network_axis_view <- function(db_con,
+                                        view_name = "network_axis"){
+  query <- glue::glue("
+  CREATE OR REPLACE VIEW {view_name} AS
+    SELECT
+        hydro_axis.axis AS axis,
+        hydro_axis.gid AS fid,
+        hydro_axis.gid_region AS gid_region,
+        hydro_axis.geom AS geom
+    FROM hydro_axis
+    ")
+  dbExecute(db_con, query)
+
+  dbDisconnect(db_con)
+
+  return(cat(glue::glue("{view_name} view added to database"), "\n"))
 }

@@ -4,8 +4,8 @@
 #' @param referentiel_hydro_dataset sf data.frame hydrographic network dataset.
 #' @param region_hydro sf data.frame region_hydrographique dataset prepared.
 #'
-#' @importFrom sf st_geometry st_sf st_sfc st_zm st_combine st_line_merge st_collection_extract st_join st_drop_geometry st_buffer
-#' @importFrom dplyr select filter mutate rename
+#' @importFrom sf st_geometry st_sf st_sfc st_zm st_combine st_line_merge st_collection_extract st_join st_drop_geometry st_buffer st_length st_read
+#' @importFrom dplyr select filter mutate rename row_number
 #' @importFrom qgisprocess qgis_run_algorithm_p
 #' @importFrom lwgeom st_split
 #'
@@ -269,7 +269,7 @@ trig_hydro_swaths <- function(db_con,
 #' @param view_name view name.
 #'
 #' @importFrom DBI dbExecute dbDisconnect
-#' @import glue glue
+#' @importFrom glue glue
 #'
 #' @return text
 #' @export
@@ -356,8 +356,10 @@ create_network_metrics_view <- function(db_con,
 
 #' Delete existing rows and insert hydrologic network splited by swaths to database.
 #'
-#' @param dataset sf data.frame hydrologic network splited.
-#' @param table_name database table name.
+#' @param hydro_swaths_dataset sf data.frame hydro swaths prepared.
+#' @param hydro_swaths_table_name text hydro_swaths table name.
+#' @param hydro_axis_dataset sf data.frame hydro axis prepared.
+#' @param hydro_axis_table_name text hydro_axis table name.
 #' @param db_con DBI connection to database.
 #' @param field_identifier text field identifier name to identified rows to remove.
 #'
