@@ -60,6 +60,12 @@ create_table_talweg_metrics <- function(table_name = "talweg_metrics",
     REFERENCES hydro_swaths(gid) ON DELETE SET NULL;")
   dbExecute(db_con, query)
 
+  reader <- Sys.getenv("DBMAPDO_DEV_READER")
+  query <- glue::glue("
+    GRANT SELECT ON {table_name}
+    TO {reader};")
+  dbExecute(db_con, query)
+
   dbDisconnect(db_con)
 
   return(glue::glue("{table_name} has been successfully created"))

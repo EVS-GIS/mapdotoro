@@ -32,8 +32,8 @@ import_hydro_stations <- function(url = "https://hubeau.eaufrance.fr/api/v1/ecou
 #' @param dataset sf data.frame hydrologic stations imported.
 #' @param region_hydro sf data.frame hydrologic regions to set gid_region.
 #'
-#' @importFrom dplyr mutate select
-#' @importFrom sf st_join st_within st_transform st_set_geometry
+#' @importFrom dplyr mutate select filter rename left_join
+#' @importFrom sf st_join st_contains st_transform st_set_geometry st_drop_geometry st_as_sf
 #'
 #' @return sf data.frame hydrologic stations prepared.
 #' @export
@@ -42,13 +42,19 @@ prepare_hydro_stations <- function(dataset = input_hydro_stations,
 
   stations <- dataset %>%
     st_set_geometry("geom") %>%
-    rename_all(clean_column_names) %>%
-    st_transform(2154) %>%
-    st_join(region_hydro, join = st_within) %>%
-    mutate(gid_region = gid) %>%
-    select(-colnames(region_hydro)[colnames(region_hydro) != "geom"])
+    st_transform(2154)
 
-  return(stations)
+  stations_prepared <- region_hydro %>%
+    st_join(stations, join = st_contains, prepared = TRUE) %>% # st_contains with region_hydro far more faster than st_within!
+    filter(!is.na(code_station)) %>%
+    select(code_station, gid) %>%
+    rename(gid_region = gid) %>%
+    st_drop_geometry() %>%
+    left_join(stations, by = "code_station") %>%
+    rename_all(clean_column_names) %>%
+    st_as_sf()
+
+  return(stations_prepared)
 }
 
 #' Create hydro_stations table structure.
@@ -113,6 +119,12 @@ create_table_hydro_stations <- function(table_name = "hydro_stations",
   query <- glue::glue("
     CREATE INDEX idx_gid_region_{table_name}
     ON hydro_stations USING btree(gid_region);")
+  dbExecute(db_con, query)
+
+  reader <- Sys.getenv("DBMAPDO_DEV_READER")
+  query <- glue::glue("
+    GRANT SELECT ON {table_name}
+    TO {reader};")
   dbExecute(db_con, query)
 
   dbDisconnect(db_con)

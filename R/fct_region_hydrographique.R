@@ -69,6 +69,12 @@ create_table_region_hydrographique <- function(table_name = "region_hydrographiq
     REFERENCES bassin_hydrographique(gid);")
   dbExecute(db_con, query)
 
+  reader <- Sys.getenv("DBMAPDO_DEV_READER")
+  query <- glue::glue("
+    GRANT SELECT ON {table_name}
+    TO {reader};")
+  dbExecute(db_con, query)
+
   dbDisconnect(db_con)
 
   return(glue::glue("{table_name} has been successfully created"))

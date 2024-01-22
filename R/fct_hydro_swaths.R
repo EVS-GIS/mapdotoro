@@ -6,7 +6,7 @@
 #'
 #' @importFrom sf st_geometry st_sf st_sfc st_zm st_combine st_line_merge st_collection_extract st_join st_drop_geometry st_buffer st_length st_read
 #' @importFrom dplyr select filter mutate rename row_number
-#' @importFrom qgisprocess qgis_run_algorithm_p
+#' @importFrom qgisprocess qgis_run_algorithm_p qgis_configure
 #' @importFrom lwgeom st_split
 #'
 #' @return list with two sf data.frame
@@ -81,6 +81,7 @@ prepare_hydro_swaths_and_axis <- function(swaths_dataset = input_swaths,
 
   #### Process measure_from_outlet ####
   cat("process measure_from_outlet : identifynetworknodes", "\n")
+  qgis_configure() # qgis_process configuration set up
   identifynetworknodes <- hydro_swaths_cleaned %>%
     qgis_run_algorithm_p("fct:identifynetworknodes",
                          QUANTIZATION = 100000000)
@@ -188,6 +189,12 @@ create_table_hydro_swaths <- function(table_name = "hydro_swaths",
     REFERENCES hydro_axis(axis) ON DELETE CASCADE;")
   dbExecute(db_con, query)
 
+  reader <- Sys.getenv("DBMAPDO_DEV_READER")
+  query <- glue::glue("
+    GRANT SELECT ON {table_name}
+    TO {reader};")
+  dbExecute(db_con, query)
+
   dbDisconnect(db_con)
 
   return(glue::glue("{table_name} has been successfully created"))
@@ -273,10 +280,10 @@ trig_hydro_swaths <- function(db_con,
 #'
 #' @return text
 #' @export
-create_network_metrics_view <- function(db_con,
-                                        view_name = "network_metrics"){
+create_network_metrics_matview <- function(db_con,
+                                           view_name = "network_metrics"){
   query <- glue::glue("
-  CREATE OR REPLACE VIEW {view_name} AS
+  CREATE MATERIALIZED VIEW {view_name} AS
     SELECT
         hydro_swaths.gid AS fid,
         hydro_swaths.axis AS axis,
@@ -349,9 +356,20 @@ create_network_metrics_view <- function(db_con,
     ")
   dbExecute(db_con, query)
 
+  query <- glue::glue("
+    CREATE INDEX idx_fid_{view_name}
+    ON {view_name} USING btree(fid);")
+  dbExecute(db_con, query)
+
+  reader <- Sys.getenv("DBMAPDO_DEV_READER")
+  query <- glue::glue("
+    GRANT SELECT ON {view_name}
+    TO {reader};")
+  dbExecute(db_con, query)
+
   dbDisconnect(db_con)
 
-  return(cat(glue::glue("{view_name} view added to database"), "\n"))
+  return(glue::glue("{view_name} materialized view successfully created"))
 }
 
 #' Delete existing rows and insert hydrologic network splited by swaths to database.
@@ -363,7 +381,7 @@ create_network_metrics_view <- function(db_con,
 #' @param db_con DBI connection to database.
 #' @param field_identifier text field identifier name to identified rows to remove.
 #'
-#' @importFrom sf st_write st_cast st_transform
+#' @importFrom sf st_write st_cast st_transform st_simplify
 #' @importFrom DBI dbExecute dbDisconnect dbGetQuery
 #' @importFrom glue glue
 #'
@@ -382,6 +400,7 @@ upsert_hydro_swaths_and_axis <- function(hydro_swaths_dataset = hydro_swaths,
 
   hydro_axis <- hydro_axis_dataset %>%
     st_cast(to = "MULTILINESTRING") %>%
+    st_simplify(preserveTopology = TRUE, dTolerance = 100) %>% # simplify for better app performance
     st_transform(4326)
 
   # information about the rows deleted in hydro_swaths

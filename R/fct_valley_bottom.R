@@ -81,6 +81,12 @@ create_table_valley_bottom <- function(table_name = "valley_bottom",
     REFERENCES hydro_swaths(gid) ON DELETE SET NULL;")
   dbExecute(db_con, query)
 
+  reader <- Sys.getenv("DBMAPDO_DEV_READER")
+  query <- glue::glue("
+    GRANT SELECT ON {table_name}
+    TO {reader};")
+  dbExecute(db_con, query)
+
   dbDisconnect(db_con)
 
   return(glue::glue("{table_name} has been successfully created"))
@@ -216,6 +222,12 @@ create_valley_bottom_full_side_matview <- function(db_con, view_name = "valley_b
   query <- glue::glue("
     CREATE INDEX idx_hydro_swaths_gid_{view_name}
     ON {view_name} USING btree(hydro_swaths_gid);")
+  dbExecute(db_con, query)
+
+  reader <- Sys.getenv("DBMAPDO_DEV_READER")
+  query <- glue::glue("
+    GRANT SELECT ON {view_name}
+    TO {reader};")
   dbExecute(db_con, query)
 
   return(glue::glue("{view_name} materialized view successfully created"))

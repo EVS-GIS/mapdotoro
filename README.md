@@ -181,7 +181,8 @@ create_landcover_area_full_side_matview(db_con = db_con(), view_name = "landcove
 create_continuity_width_full_side_matview(db_con = db_con(), view_name = "continuity_width_full_side")
 create_continuity_area_full_side_matview(db_con = db_con(), view_name = "continuity_area_full_side")
 create_valley_bottom_full_side_matview(db_con = db_con(), view_name = "valley_bottom_full_side")
-create_network_metrics_view(db_con = db_con(), view_name = "network_metrics")
+create_network_metrics_matview(db_con = db_con(), view_name = "network_metrics")
+create_network_axis_matview(db_con = db_con(), view_name = "network_axis")
 ```
 
 ### Update and insert database, refresh materialized view

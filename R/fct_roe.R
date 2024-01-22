@@ -4,7 +4,7 @@
 #' @param region_hydro sf data.frame hydrographic regions to set spatial join on gid_region.
 #'
 #' @importFrom dplyr select mutate filter rename left_join rename_all
-#' @importFrom sf st_join st_geometry st_within st_transform st_drop_geometry
+#' @importFrom sf st_join st_geometry st_contains st_transform st_drop_geometry
 #'
 #' @return sf data.frame
 #' @export
@@ -137,6 +137,12 @@ create_table_roe <- function(table_name = "roe",
   query <- glue::glue("
     CREATE INDEX idx_gid_region_{table_name}
     ON {table_name} USING btree(gid_region);")
+  dbExecute(db_con, query)
+
+  reader <- Sys.getenv("DBMAPDO_DEV_READER")
+  query <- glue::glue("
+    GRANT SELECT ON {table_name}
+    TO {reader};")
   dbExecute(db_con, query)
 
   dbDisconnect(db_con)

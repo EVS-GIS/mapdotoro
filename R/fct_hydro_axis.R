@@ -74,6 +74,12 @@ create_table_hydro_axis <- function(table_name = "hydro_axis",
     ON {table_name} USING btree(gid_region);")
   dbExecute(db_con, query)
 
+  reader <- Sys.getenv("DBMAPDO_DEV_READER")
+  query <- glue::glue("
+    GRANT SELECT ON {table_name}
+    TO {reader};")
+  dbExecute(db_con, query)
+
   dbDisconnect(db_con)
 
   return(glue::glue("{table_name} has been successfully created"))
@@ -89,20 +95,32 @@ create_table_hydro_axis <- function(table_name = "hydro_axis",
 #'
 #' @return text
 #' @export
-create_network_axis_view <- function(db_con,
+create_network_axis_matview <- function(db_con,
                                         view_name = "network_axis"){
   query <- glue::glue("
-  CREATE OR REPLACE VIEW {view_name} AS
+  CREATE MATERIALIZED VIEW {view_name} AS
     SELECT
         hydro_axis.axis AS axis,
         hydro_axis.gid AS fid,
+        hydro_axis.toponyme AS toponyme,
         hydro_axis.gid_region AS gid_region,
         hydro_axis.geom AS geom
     FROM hydro_axis
     ")
   dbExecute(db_con, query)
 
+  query <- glue::glue("
+    CREATE INDEX idx_axis_{view_name}
+    ON {view_name} USING btree(axis);")
+  dbExecute(db_con, query)
+
+  reader <- Sys.getenv("DBMAPDO_DEV_READER")
+  query <- glue::glue("
+    GRANT SELECT ON {view_name}
+    TO {reader};")
+  dbExecute(db_con, query)
+
   dbDisconnect(db_con)
 
-  return(cat(glue::glue("{view_name} view added to database"), "\n"))
+  return(glue::glue("{view_name} materialized view successfully created"))
 }
