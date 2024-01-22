@@ -4,7 +4,7 @@
 #' @param referentiel_hydro_dataset sf data.frame hydrographic network dataset.
 #' @param region_hydro sf data.frame region_hydrographique dataset prepared.
 #'
-#' @importFrom sf st_geometry st_sf st_sfc st_zm st_combine st_line_merge st_collection_extract st_join st_drop_geometry st_buffer st_length st_read
+#' @importFrom sf st_geometry st_sf st_sfc st_zm st_combine st_line_merge st_collection_extract st_join st_drop_geometry st_buffer st_length st_read st_within
 #' @importFrom dplyr select filter mutate rename row_number
 #' @importFrom qgisprocess qgis_run_algorithm_p qgis_configure
 #' @importFrom lwgeom st_split
