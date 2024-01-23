@@ -7,7 +7,7 @@
 upsert_hydro_swaths_and_axis(
   hydro_swaths_dataset = hydro_swaths,
   hydro_swaths_table_name = "hydro_swaths",
-  hydro_axis_dataset = hydro_swaths,
+  hydro_axis_dataset = hydro_axis,
   hydro_axis_table_name = "hydro_axis",
   db_con,
   field_identifier = "axis"

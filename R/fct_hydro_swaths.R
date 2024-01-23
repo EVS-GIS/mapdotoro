@@ -389,18 +389,17 @@ create_network_metrics_matview <- function(db_con,
 #' @export
 upsert_hydro_swaths_and_axis <- function(hydro_swaths_dataset = hydro_swaths,
                                          hydro_swaths_table_name = "hydro_swaths",
-                                         hydro_axis_dataset = hydro_swaths,
+                                         hydro_axis_dataset = hydro_axis,
                                          hydro_axis_table_name = "hydro_axis",
                                          db_con,
                                          field_identifier = "axis"){
 
   hydro_swaths <- hydro_swaths_dataset %>%
-    st_cast(to = "LINESTRING") %>%
     st_transform(4326)
 
   hydro_axis <- hydro_axis_dataset %>%
     st_cast(to = "MULTILINESTRING") %>%
-    st_simplify(preserveTopology = TRUE, dTolerance = 100) %>% # simplify for better app performance
+    st_simplify(preserveTopology = TRUE, dTolerance = 200) %>% # simplify for better app performance
     st_transform(4326)
 
   # information about the rows deleted in hydro_swaths
@@ -421,6 +420,23 @@ upsert_hydro_swaths_and_axis <- function(hydro_swaths_dataset = hydro_swaths,
 
   # INSERT hydro axis
   st_write(obj = hydro_axis, dsn = db_con, layer = hydro_axis_table_name, append = TRUE)
+
+  # PostGIS simplification and reformat to optimise axis display
+  query <- glue::glue("
+    UPDATE {hydro_axis_table_name}
+    SET geom = ST_QuantizeCoordinates(geom, 3, 3);")
+  dbExecute(db_con, query)
+
+  query <- glue::glue("
+    UPDATE {hydro_axis_table_name}
+    SET geom = ST_SnapToGrid(geom, 0.0001)")
+  dbExecute(db_con, query)
+
+  # ST_LineMerge make shorter way to write the MULTILINESTRING geometries
+  query <- glue::glue("
+    UPDATE {hydro_axis_table_name}
+    set geom = ST_LineMerge(geom)")
+  dbExecute(db_con, query)
 
   # INSERT hydro_swaths
   st_write(obj = hydro_swaths, dsn = db_con, layer = hydro_swaths_table_name, append = TRUE)
