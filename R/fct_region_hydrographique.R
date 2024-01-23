@@ -34,7 +34,6 @@ create_table_region_hydrographique <- function(table_name = "region_hydrographiq
     cdregionhy text,
     lbregionhy text,
     cdbh text,
-    gid_bassin integer,
     display boolean DEFAULT false,
     geom public.geometry(MultiPolygon)
     );")
@@ -64,9 +63,9 @@ create_table_region_hydrographique <- function(table_name = "region_hydrographiq
 
   query <- glue::glue("
     ALTER TABLE {table_name}
-    ADD CONSTRAINT fk_region_gid_bassin
-    FOREIGN KEY(gid_bassin)
-    REFERENCES bassin_hydrographique(gid);")
+    ADD CONSTRAINT fk_region_cdbh_bassin
+    FOREIGN KEY(cdbh)
+    REFERENCES bassin_hydrographique(cdbh);")
   dbExecute(db_con, query)
 
   reader <- Sys.getenv("DBMAPDO_DEV_READER")
@@ -119,14 +118,6 @@ upsert_region_hydrographique <- function(dataset = region_hydrographique,
   query <- glue::glue("
     UPDATE {table_name}
     SET geom = ST_SnapToGrid(geom, 0.000001)")
-  dbExecute(db_con, query)
-
-  query <- glue::glue("
-    UPDATE {table_name}
-    SET gid_bassin =
-      bassin_hydrographique.gid
-    FROM bassin_hydrographique
-    WHERE bassin_hydrographique.cdbh LIKE {table_name}.cdbh;")
   dbExecute(db_con, query)
 
   query <- glue::glue("
