@@ -28,6 +28,33 @@ Tested with QGIS version 3.28.13 and Fluvial Corridor Toolbox version
 
 ## Workflow
 
+### Get troncon id and cours d’eau id from the IGN BD TOPO in PostgreSQL/PostGIS database
+
+``` sql
+SELECT 
+    -- from TRON_EAU0000000074693381 create BIGINT with only 74693381
+    CAST(regexp_replace(
+            regexp_replace(cleabs, 
+                           '[^0-9]', '', 'g'), '0*$', '') AS BIGINT) AS id_troncon,
+   -- we can have several cours d'eau for one troncon like COURDEAU0000002215482270/COURDEAU0000002215482269
+   -- keep ony the first (like in BDTOPO2REFHYDRO) the create BIGINT like 2215482270
+    CASE 
+        WHEN POSITION('/' IN liens_vers_cours_d_eau) > 0
+            THEN CAST(regexp_replace(
+                regexp_replace(
+                    SUBSTRING(liens_vers_cours_d_eau FROM 1 FOR POSITION('/' IN liens_vers_cours_d_eau) - 1), 
+                    '[^0-9]', '', 'g'), '0*$', '') AS BIGINT)
+        ELSE CAST(regexp_replace(
+            regexp_replace(liens_vers_cours_d_eau, 
+                           '[^0-9]', '', 'g'), '0*$', '') AS BIGINT)
+      END AS axis
+FROM public.troncon_hydrographique
+-- filter to keep only troncon where liens_vers_cours_d_eau is not NULL or empty
+WHERE (liens_vers_cours_d_eau IS NOT NULL AND liens_vers_cours_d_eau != '')
+```
+
+export the table in csv to troncon_bdtopo_id.csv
+
 ### Libraries and QGIS configuration
 
 ``` r
@@ -56,6 +83,7 @@ input_talweg_metrics <- talweg_metrics
 input_landcover <- landcover
 input_continuity <- continuity
 input_valley_bottom <- valley_bottom
+input_troncon_bdtopo_id <- troncon_bdtopo_id
 ```
 
 ### Datasets from the Fluvial Corridor Toolbox
@@ -79,6 +107,7 @@ input_swaths <- sf::st_read(dsn = file.path("data-raw", "raw-datasets", "SWATHS_
 input_landcover <- readr::read_csv(file.path("data-raw", "raw-datasets", "WIDTH_LANDCOVER.csv"))
 input_continuity <- readr::read_csv(file.path("data-raw", "raw-datasets", "WIDTH_CONTINUITY.csv"))
 input_valley_bottom <- readr::read_csv(file.path("data-raw", "raw-datasets", "WIDTH_VALLEY_BOTTOM.csv"))
+input_troncon_bdtopo_id <- readr::read_csv(file.path("data-raw", "raw-datasets", "troncon_bdtopo_id.csv"))
 ```
 
 ### Prepare dataset
