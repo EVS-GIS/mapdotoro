@@ -38,10 +38,7 @@ Tested with QGIS version 3.28.13 and Fluvial Corridor Toolbox version 1.0.11.
 ### Get troncon id and cours d'eau id from the IGN BD TOPO in PostgreSQL/PostGIS database
 ```{sql, eval = FALSE}
 SELECT 
-	-- from TRON_EAU0000000074693381 create BIGINT with only 74693381
-	CAST(regexp_replace(
-			regexp_replace(cleabs, 
-						   '[^0-9]', '', 'g'), '0*$', '') AS BIGINT) AS id_troncon,
+	cleabs AS id_troncon,
    -- we can have several cours d'eau for one troncon like COURDEAU0000002215482270/COURDEAU0000002215482269
    -- keep ony the first (like in BDTOPO2REFHYDRO) the create BIGINT like 2215482270
 	CASE 
@@ -58,7 +55,8 @@ FROM public.troncon_hydrographique
 -- filter to keep only troncon where liens_vers_cours_d_eau is not NULL or empty
 WHERE (liens_vers_cours_d_eau IS NOT NULL AND liens_vers_cours_d_eau != '')
 ```
-export the table in csv to troncon_bdtopo_id.csv
+
+**Export the table in csv to ./data-raw/raw-datasets/troncon_bdtopo_id.csv**
 
 ### Libraries and QGIS configuration
 ```{r, eval = FALSE}
@@ -93,19 +91,13 @@ input_troncon_bdtopo_id <- troncon_bdtopo_id
 ```{r eval=FALSE}
 input_bassin_hydrographique <- sf::st_read(dsn = file.path("data-raw", "raw-datasets",
                                                  "bassin_hydrographique.gpkg"))
-
 input_region_hydrographique <- sf::st_read(dsn = file.path("data-raw", "raw-datasets",
                                                  "region_hydrographique.gpkg"))
-
 input_roe <- sf::st_read(dsn = file.path("data-raw", "raw-datasets", "roe.gpkg"))
-
 input_hydro_stations <- import_hydro_stations(url = "https://hubeau.eaufrance.fr/api/v1/ecoulement/stations?format=json")
-
 input_talweg_metrics <- readr::read_csv(file.path("data-raw", "raw-datasets", "TALWEG_METRICS.csv"))
-
 input_referentiel_hydro <- sf::st_read(dsn = file.path("data-raw", "raw-datasets", "REFERENTIEL_HYDRO.shp"))
 input_swaths <- sf::st_read(dsn = file.path("data-raw", "raw-datasets", "SWATHS_MEDIALAXIS.shp"))
-
 input_landcover <- readr::read_csv(file.path("data-raw", "raw-datasets", "WIDTH_LANDCOVER.csv"))
 input_continuity <- readr::read_csv(file.path("data-raw", "raw-datasets", "WIDTH_CONTINUITY.csv"))
 input_valley_bottom <- readr::read_csv(file.path("data-raw", "raw-datasets", "WIDTH_VALLEY_BOTTOM.csv"))
@@ -118,7 +110,8 @@ bassin_hydrographique <- prepare_bassin_hydrographique(input_bassin_hydrographiq
 region_hydrographique <- prepare_region_hydrographique(input_region_hydrographique)
 
 roe <- prepare_roe(input_roe,
-                   region_hydro = region_hydrographique)
+                   region_hydro = region_hydrographique,
+                   troncon_bdtopo_id = input_troncon_bdtopo_id)
 
 hydro_stations <- prepare_hydro_stations(dataset = input_hydro_stations,
                                          region_hydro = region_hydrographique)

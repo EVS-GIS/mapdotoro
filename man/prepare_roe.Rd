@@ -4,7 +4,11 @@
 \alias{prepare_roe}
 \title{Prepare roe dataset to database export.}
 \usage{
-prepare_roe(dataset = input_roe, region_hydro = region_hydrographique)
+prepare_roe(
+  dataset = input_roe,
+  region_hydro = region_hydrographique,
+  troncon_bdtopo_id = input_troncon_bdtopo_id
+)
 }
 \arguments{
 \item{dataset}{sf data.frame roe.}

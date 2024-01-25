@@ -3,13 +3,14 @@
 #' @param dataset sf data.frame roe.
 #' @param region_hydro sf data.frame hydrographic regions to set spatial join on gid_region.
 #'
-#' @importFrom dplyr select mutate filter rename left_join rename_all
+#' @importFrom dplyr select mutate filter rename left_join rename_all left_join
 #' @importFrom sf st_join st_geometry st_contains st_transform st_drop_geometry
 #'
 #' @return sf data.frame
 #' @export
 prepare_roe <- function(dataset = input_roe,
-                        region_hydro = region_hydrographique){
+                        region_hydro = region_hydrographique,
+                        troncon_bdtopo_id = input_troncon_bdtopo_id){
 
   roe <- dataset %>%
     st_transform(2154)
@@ -22,7 +23,9 @@ prepare_roe <- function(dataset = input_roe,
     st_drop_geometry() %>%
     left_join(roe, by = "CdObstEcou") %>%
     rename_all(clean_column_names) %>%
-    st_as_sf()
+    st_as_sf() %>%
+    left_join(troncon_bdtopo_id, by = c("idtronco_1" = "id_troncon")) %>%
+    filter(!is.na(axis))
 
   return(roe_prepared)
 }

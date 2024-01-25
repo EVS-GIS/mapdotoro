@@ -8,7 +8,7 @@
 A data frame with 536 rows and 2 variables:
 \describe{
 \item{ id_troncon }{  character }
-\item{ axis }{  character }
+\item{ axis }{  numeric }
 }
 }
 \source{
