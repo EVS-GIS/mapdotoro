@@ -82,6 +82,7 @@ prepare_hydro_swaths_and_axis <- function(swaths_dataset = input_swaths,
   #### Process measure_from_outlet ####
   cat("process measure_from_outlet : identifynetworknodes", "\n")
   qgis_configure() # qgis_process configuration set up
+
   identifynetworknodes <- hydro_swaths_cleaned %>%
     qgis_run_algorithm_p("fct:identifynetworknodes",
                          QUANTIZATION = 100000000)
@@ -398,7 +399,6 @@ upsert_hydro_swaths_and_axis <- function(hydro_swaths_dataset = hydro_swaths,
     st_transform(4326)
 
   hydro_axis <- hydro_axis_dataset %>%
-    st_cast(to = "MULTILINESTRING") %>%
     st_simplify(preserveTopology = TRUE, dTolerance = 200) %>% # simplify for better app performance
     st_transform(4326)
 

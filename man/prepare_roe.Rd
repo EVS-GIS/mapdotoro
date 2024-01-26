@@ -7,13 +7,18 @@
 prepare_roe(
   dataset = input_roe,
   region_hydro = region_hydrographique,
-  troncon_bdtopo_id = input_troncon_bdtopo_id
+  troncon_bdtopo_id = input_troncon_bdtopo_id,
+  hydro_axis = hydro_axis
 )
 }
 \arguments{
 \item{dataset}{sf data.frame roe.}
 
 \item{region_hydro}{sf data.frame hydrographic regions to set spatial join on gid_region.}
+
+\item{troncon_bdtopo_id}{data.frame with id_troncon and axis.}
+
+\item{hydro_axis}{sf data.frame with hydrologic axis prepared.}
 }
 \value{
 sf data.frame
