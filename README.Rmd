@@ -190,29 +190,33 @@ create_valley_bottom_full_side_matview(db_con = db_con(), view_name = "valley_bo
 create_network_metrics_matview(db_con = db_con(), view_name = "network_metrics")
 create_network_axis_matview(db_con = db_con(), view_name = "network_axis")
 ```
-
-### Update and insert database, refresh materialized view
+### Fixed tables database : insert bassins and regions
 ```{r, eval=FALSE}
+# Rows can't be deleted for these two tables 
 upsert_bassin_hydrographique(dataset = bassin_hydrographique,
                              table_name = "bassin_hydrographique",
                              db_con = db_con(),
                              field_identifier = "cdbh")
 
-set_displayed_bassin_region(table_name = "bassin_hydrographique",
-                            display_codes_bassin_or_region = c("06"),
-                            field_identifier = "cdbh",
-                            db_con = db_con())
-
 upsert_region_hydrographique(dataset = region_hydrographique,
                              table_name = "region_hydrographique",
                              db_con = db_con(),
                              field_identifier = "cdregionhy")
+```
+### Update / insert tables and refresh materialized view
+```{r, eval=FALSE}
+# change display_codes_bassin_or_region to set the bassins and regions that can be explored by mapdoapp user
+set_displayed_bassin_region(table_name = "bassin_hydrographique",
+                            display_codes_bassin_or_region = c("06"),
+                            field_identifier = "cdbh",
+                            db_con = db_con())
 
 set_displayed_bassin_region(table_name = "region_hydrographique",
                             display_codes_bassin_or_region = c("W"),
                             field_identifier = "cdregionhy",
                             db_con = db_con())
 
+# Delete and insert rows in table. !! Don't forget to refresh materialized views !! 
 upsert_hydro_stations(dataset = hydro_stations,
                       table_name = "hydro_stations",
                       db_con = db_con(),
@@ -255,6 +259,7 @@ upsert_valley_bottom(dataset = valley_bottom,
                      db_con(),
                      field_identifier = "axis")
 
+# Refresh all the materialized views
 # !! order matters !! network_metrics depend of full_side views, need to be at last.
 materialized_views <- c("landcover_area_full_side", "continuity_area_full_side",
                         "continuity_width_full_side", "valley_bottom_full_side",
