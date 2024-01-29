@@ -84,15 +84,11 @@ create_table_landcover_area <- function(table_name = "landcover_area",
     diffuse_urban_pc double precision,
     dense_urban_pc double precision,
     infrastructures_pc double precision,
-    hydro_swaths_gid bigint
+    hydro_swaths_gid bigint,
+    -- Constraints
+    CONSTRAINT fk_{table_name}_hydro_swaths_gid FOREIGN KEY(hydro_swaths_gid)
+      REFERENCES hydro_swaths(gid) ON DELETE CASCADE
     );")
-  dbExecute(db_con, query)
-
-  query <- glue::glue("
-    ALTER TABLE {table_name}
-    ADD CONSTRAINT fk_{table_name}_hydro_swaths_gid
-    FOREIGN KEY(hydro_swaths_gid)
-    REFERENCES hydro_swaths(gid) ON DELETE CASCADE;")
   dbExecute(db_con, query)
 
   reader <- Sys.getenv("DBMAPDO_DEV_READER")
@@ -129,10 +125,10 @@ fct_landcover_area_insert_delete_reaction <- function(db_con,
         SET hydro_swaths_gid =
           (SELECT hydro_swaths.gid
           FROM hydro_swaths
-          WHERE hydro_swaths.axis = {table_name}.axis
-           AND hydro_swaths.measure_medial_axis = {table_name}.measure_medial_axis
+          WHERE hydro_swaths.axis = NEW.AXIS
+            AND hydro_swaths.measure_medial_axis = NEW.measure_medial_axis
           LIMIT 1)
-        WHERE NEW.id = {table_name}.id;
+          WHERE NEW.id = {table_name}.id;
 
         RETURN NEW;
 

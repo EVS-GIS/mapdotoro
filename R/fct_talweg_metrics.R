@@ -31,6 +31,9 @@ prepare_talweg_metrics <- function(dataset = input_talweg_metrics){
 #' @export
 create_table_talweg_metrics <- function(table_name = "talweg_metrics",
                                                db_con){
+
+  reader <- Sys.getenv("DBMAPDO_DEV_READER")
+
   query <- glue::glue("
     CREATE TABLE public.{table_name} (
     id SERIAL PRIMARY KEY,
@@ -43,24 +46,14 @@ create_table_talweg_metrics <- function(table_name = "talweg_metrics",
     axis bigint,
     measure_medial_axis bigint,
     sinuosity double precision,
-    hydro_swaths_gid bigint
+    hydro_swaths_gid bigint,
+    -- Constraints
+    CONSTRAINT {table_name}_unq_axis_measure UNIQUE (axis, measure_medial_axis),
+    CONSTRAINT fk_{table_name}_hydro_swaths_gid FOREIGN KEY(hydro_swaths_gid)
+      REFERENCES hydro_swaths(gid) ON DELETE SET NULL
     );")
   dbExecute(db_con, query)
 
-  query <- glue::glue("
-    ALTER TABLE {table_name}
-    ADD CONSTRAINT {table_name}_unq_axis_measure
-    UNIQUE (axis, measure_medial_axis);")
-  dbExecute(db_con, query)
-
-  query <- glue::glue("
-    ALTER TABLE {table_name}
-    ADD CONSTRAINT fk_{table_name}_hydro_swaths_gid
-    FOREIGN KEY(hydro_swaths_gid)
-    REFERENCES hydro_swaths(gid) ON DELETE SET NULL;")
-  dbExecute(db_con, query)
-
-  reader <- Sys.getenv("DBMAPDO_DEV_READER")
   query <- glue::glue("
     GRANT SELECT ON {table_name}
     TO {reader};")
@@ -92,7 +85,7 @@ fct_talweg_metrics_insert_delete_reaction <- function(db_con,
         -- update hydro_swaths_gid from {table_name}
         UPDATE {table_name}
         SET hydro_swaths_gid =
-          (SELECT gid
+          (SELECT hydro_swaths.gid
           FROM hydro_swaths
           WHERE hydro_swaths.axis = NEW.AXIS
             AND hydro_swaths.measure_medial_axis = NEW.measure_medial_axis

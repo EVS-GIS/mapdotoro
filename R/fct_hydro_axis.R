@@ -51,25 +51,16 @@ create_table_hydro_axis <- function(table_name = "hydro_axis",
     toponyme text,
     length double precision,
     gid_region integer,
-    geom public.geometry(MultiLineString)
+    geom public.geometry(LineString),
+    -- Constraints
+    CONSTRAINT {table_name}_unq_axis UNIQUE (axis),
+    CONSTRAINT fk_{table_name}_gid_region FOREIGN KEY(gid_region)
+      REFERENCES region_hydrographique(gid)
     );")
   dbExecute(db_con, query)
 
   query <- glue::glue("
     CREATE INDEX idx_geom_{table_name} ON public.{table_name} USING gist (geom);")
-  dbExecute(db_con, query)
-
-  query <- glue::glue("
-    ALTER TABLE {table_name}
-    ADD CONSTRAINT {table_name}_unq_axis
-    UNIQUE (axis);")
-  dbExecute(db_con, query)
-
-  query <- glue::glue("
-    ALTER TABLE {table_name}
-    ADD CONSTRAINT fk_{table_name}_gid_region
-    FOREIGN KEY(gid_region)
-    REFERENCES region_hydrographique(gid);")
   dbExecute(db_con, query)
 
   query <- glue::glue("

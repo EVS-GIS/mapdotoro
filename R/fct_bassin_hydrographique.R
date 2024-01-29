@@ -37,18 +37,14 @@ create_table_bassin_hydrographique <- function(table_name = "bassin_hydrographiq
     numcircadm text,
     projcoordo text,
     display boolean DEFAULT false,
-    geom public.geometry
+    geom public.geometry,
+    -- Constraints
+    CONSTRAINT {table_name}_unq_code_bassin UNIQUE (cdbh)
     );")
   dbExecute(db_con, query)
 
   query <- glue::glue("
     CREATE INDEX idx_geom_{table_name} ON public.{table_name} USING gist (geom);")
-  dbExecute(db_con, query)
-
-  query <- glue::glue("
-    ALTER TABLE {table_name}
-    ADD CONSTRAINT unq_code_bassin
-    UNIQUE (cdbh);")
   dbExecute(db_con, query)
 
   reader <- Sys.getenv("DBMAPDO_DEV_READER")

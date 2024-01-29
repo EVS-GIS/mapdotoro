@@ -7,7 +7,7 @@
 #'
 #' @importFrom dplyr select mutate filter rename left_join rename_all left_join
 #' @importFrom qgisprocess qgis_configure qgis_run_algorithm_p
-#' @importFrom sf st_join st_geometry st_contains st_transform st_drop_geometry st_zm st_filter
+#' @importFrom sf st_join st_geometry st_contains st_transform st_drop_geometry st_zm st_filter st_intersects
 #'
 #' @return sf data.frame
 #' @export
@@ -72,7 +72,7 @@ prepare_roe <- function(dataset = input_roe,
                          AXIS_ID_FIELD = "axis")
 
   # rename and remove columns
-  roe_referenced <- st_read(pointsalongnetwork$OUTPUT) %>%
+  roe_referenced <- st_read(roe_along_network$OUTPUT) %>%
     rename("distance_axis" = "LOCM") %>%
     select(-c("AXIS_0", "DISTANCE", "SIDE")) %>%
     st_zm()
@@ -166,14 +166,15 @@ create_table_roe <- function(table_name = "roe",
     pkobstecou double precision,
     gid_region integer,
     axis bigint,
-    geom public.geometry
+    distance_axis double precision,
+    geom public.geometry,
+    -- Constraints
+    CONSTRAINT unq_cdobstecou UNIQUE (cdobstecou),
+    CONSTRAINT fk_{table_name}_gid_region FOREIGN KEY(gid_region)
+      REFERENCES region_hydrographique(gid),
+    CONSTRAINT fk_{table_name}_axis FOREIGN KEY(axis)
+      REFERENCES hydro_axis(axis)
     );")
-  dbExecute(db_con, query)
-
-  query <- glue::glue("
-    ALTER TABLE {table_name}
-    ADD CONSTRAINT unq_cdobstecou
-    UNIQUE (cdobstecou);")
   dbExecute(db_con, query)
 
   query <- glue::glue("
@@ -182,22 +183,8 @@ create_table_roe <- function(table_name = "roe",
   dbExecute(db_con, query)
 
   query <- glue::glue("
-    ALTER TABLE {table_name}
-    ADD CONSTRAINT fk_{table_name}_gid_region
-    FOREIGN KEY(gid_region)
-    REFERENCES region_hydrographique(gid);")
-  dbExecute(db_con, query)
-
-  query <- glue::glue("
     CREATE INDEX idx_gid_region_{table_name}
     ON {table_name} USING btree(gid_region);")
-  dbExecute(db_con, query)
-
-  query <- glue::glue("
-    ALTER TABLE {table_name}
-    ADD CONSTRAINT fk_{table_name}_axis
-    FOREIGN KEY(axis)
-    REFERENCES hydro_axis(axis);")
   dbExecute(db_con, query)
 
   reader <- Sys.getenv("DBMAPDO_DEV_READER")

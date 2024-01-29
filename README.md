@@ -53,21 +53,6 @@ WHERE (liens_vers_cours_d_eau IS NOT NULL AND liens_vers_cours_d_eau != '')
 **Export the table in csv to
 ./data-raw/raw-datasets/troncon_bdtopo_id.csv**
 
-### Libraries and QGIS configuration
-
-``` r
-library(dplyr)
-library(sf)
-library(tmap)
-library(mapdotoro)
-library(tidyr)
-library(lwgeom)
-library(qgisprocess)
-library(DBI)
-
-qgis_configure()
-```
-
 ### Testing data
 
 ``` r
@@ -231,11 +216,6 @@ set_displayed_bassin_region(table_name = "region_hydrographique",
                             field_identifier = "cdregionhy",
                             db_con = db_con())
 
-upsert_roe(dataset = roe,
-           table_name = "roe", 
-           db_con = db_con(), 
-           field_identifier = "cdobstecou")
-
 upsert_hydro_stations(dataset = hydro_stations,
                       table_name = "hydro_stations",
                       db_con = db_con(),
@@ -247,6 +227,11 @@ upsert_hydro_swaths_and_axis(hydro_swaths_dataset = hydro_swaths_and_axis$hydro_
                              hydro_axis_table_name = "hydro_axis",
                              db_con = db_con(),
                              field_identifier = "axis")
+
+upsert_roe(dataset = roe,
+           table_name = "roe", 
+           db_con = db_con(), 
+           field_identifier = "cdobstecou")
 
 upsert_talweg_metrics(dataset = talweg_metrics,
                       table_name = "talweg_metrics",
@@ -273,5 +258,10 @@ upsert_valley_bottom(dataset = valley_bottom,
                      db_con(),
                      field_identifier = "axis")
 
-refresh_all_materialized_views(db_con = db_con())
+# !! order matters !! network_metrics depend of full_side views, need to be at last.
+materialized_views <- c("landcover_area_full_side", "continuity_area_full_side",
+                        "continuity_width_full_side", "valley_bottom_full_side",
+                        "network_axis", "network_metrics")
+
+refresh_all_materialized_views(db_con = db_con(), materialized_views)
 ```
