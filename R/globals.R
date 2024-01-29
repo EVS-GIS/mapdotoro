@@ -26,7 +26,7 @@ globalVariables(unique(c(
   # prepare_region_hydrographique:
   "input_region_hydrographique",
   # prepare_roe:
-  "CdObstEcou", "gid.x", "input_roe", "region_hydrographique", "st_contains",
+  "CdObstEcou", "gid.x", "input_roe", "region_hydrographique", "st_contains", "input_troncon_bdtopo_id", "hydro_swaths_and_axis",
   # prepare_talweg_metrics:
   "input_talweg_metrics",
   # prepare_valley_bottom:

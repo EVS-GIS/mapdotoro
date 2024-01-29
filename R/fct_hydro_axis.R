@@ -5,6 +5,7 @@
 #'
 #' @importFrom sf st_drop_geometry st_union
 #' @importFrom dplyr select group_by summarise left_join rename_all
+#' @importFrom lwgeom st_snap_to_grid
 #'
 #' @return sf data.frame
 #' @export
@@ -24,7 +25,9 @@ prepare_hydro_axis <- function(referentiel_hydro_dataset = input_referentiel_hyd
               gid_region = names(sort(table(gid_region), decreasing = TRUE))[1], # statistical mode
               geom = st_union(geom)) %>% # union geom and recalculate length
     left_join(referentiel_hydro_no_geom, by = c("axis" = "AXIS"), multiple = "first") %>% # add TOPONYME field
-    rename_all(clean_column_names)
+    rename_all(clean_column_names) %>%
+    lwgeom::st_snap_to_grid(0.00001) %>%  # fix multilinestring for st_merge_line
+    st_line_merge()
 
   return(hydro_axis)
 }
@@ -48,25 +51,16 @@ create_table_hydro_axis <- function(table_name = "hydro_axis",
     toponyme text,
     length double precision,
     gid_region integer,
-    geom public.geometry(MultiLineString)
+    geom public.geometry(LineString),
+    -- Constraints
+    CONSTRAINT {table_name}_unq_axis UNIQUE (axis),
+    CONSTRAINT fk_{table_name}_gid_region FOREIGN KEY(gid_region)
+      REFERENCES region_hydrographique(gid)
     );")
   dbExecute(db_con, query)
 
   query <- glue::glue("
     CREATE INDEX idx_geom_{table_name} ON public.{table_name} USING gist (geom);")
-  dbExecute(db_con, query)
-
-  query <- glue::glue("
-    ALTER TABLE {table_name}
-    ADD CONSTRAINT {table_name}_unq_axis
-    UNIQUE (axis);")
-  dbExecute(db_con, query)
-
-  query <- glue::glue("
-    ALTER TABLE {table_name}
-    ADD CONSTRAINT fk_{table_name}_gid_region
-    FOREIGN KEY(gid_region)
-    REFERENCES region_hydrographique(gid);")
   dbExecute(db_con, query)
 
   query <- glue::glue("

@@ -82,6 +82,7 @@ prepare_hydro_swaths_and_axis <- function(swaths_dataset = input_swaths,
   #### Process measure_from_outlet ####
   cat("process measure_from_outlet : identifynetworknodes", "\n")
   qgis_configure() # qgis_process configuration set up
+
   identifynetworknodes <- hydro_swaths_cleaned %>%
     qgis_run_algorithm_p("fct:identifynetworknodes",
                          QUANTIZATION = 100000000)
@@ -160,33 +161,19 @@ create_table_hydro_swaths <- function(table_name = "hydro_swaths",
     length double precision,
     strahler integer,
     gid_region integer,
-    geom public.geometry(LineString)
+    geom public.geometry(LineString),
+    -- Constraints
+    CONSTRAINT {table_name}_unq_axis_measure UNIQUE (axis, measure_medial_axis),
+    CONSTRAINT fk_{table_name}_gid_region FOREIGN KEY(gid_region)
+      REFERENCES region_hydrographique(gid),
+    CONSTRAINT fk_{table_name}_axis FOREIGN KEY(axis)
+      REFERENCES hydro_axis(axis) ON DELETE CASCADE
     );")
-  dbExecute(db_con, query)
-
-  query <- glue::glue("
-    ALTER TABLE {table_name}
-    ADD CONSTRAINT {table_name}_unq_axis_measure
-    UNIQUE (axis, measure_medial_axis);")
   dbExecute(db_con, query)
 
   query <- glue::glue("
     CREATE INDEX idx_geom_{table_name}
     ON {table_name} USING GIST (geom);")
-  dbExecute(db_con, query)
-
-  query <- glue::glue("
-    ALTER TABLE {table_name}
-    ADD CONSTRAINT fk_{table_name}_gid_region
-    FOREIGN KEY(gid_region)
-    REFERENCES region_hydrographique(gid);")
-  dbExecute(db_con, query)
-
-  query <- glue::glue("
-    ALTER TABLE {table_name}
-    ADD CONSTRAINT fk_{table_name}_axis
-    FOREIGN KEY(axis)
-    REFERENCES hydro_axis(axis) ON DELETE CASCADE;")
   dbExecute(db_con, query)
 
   reader <- Sys.getenv("DBMAPDO_DEV_READER")
@@ -230,6 +217,24 @@ fct_hydro_swaths_insert_delete_reaction <- function(db_con,
         SET {table_name}_gid = NEW.gid
         WHERE NEW.axis = landcover_area.axis
            AND NEW.measure_medial_axis = landcover_area.measure_medial_axis;
+
+        -- update {table_name}_gid from continuity_area
+        UPDATE continuity_area
+        SET {table_name}_gid = NEW.gid
+        WHERE NEW.axis = continuity_area.axis
+           AND NEW.measure_medial_axis = continuity_area.measure_medial_axis;
+
+        -- update {table_name}_gid from continuity_width
+        UPDATE continuity_width
+        SET {table_name}_gid = NEW.gid
+        WHERE NEW.axis = continuity_width.axis
+           AND NEW.measure_medial_axis = continuity_width.measure_medial_axis;
+
+        -- update {table_name}_gid from valley_bottom
+        UPDATE valley_bottom
+        SET {table_name}_gid = NEW.gid
+        WHERE NEW.axis = valley_bottom.axis
+           AND NEW.measure_medial_axis = valley_bottom.measure_medial_axis;
 
         RETURN NEW;
 
@@ -398,7 +403,6 @@ upsert_hydro_swaths_and_axis <- function(hydro_swaths_dataset = hydro_swaths,
     st_transform(4326)
 
   hydro_axis <- hydro_axis_dataset %>%
-    st_cast(to = "MULTILINESTRING") %>%
     st_simplify(preserveTopology = TRUE, dTolerance = 200) %>% # simplify for better app performance
     st_transform(4326)
 

@@ -94,26 +94,17 @@ create_table_hydro_stations <- function(table_name = "hydro_stations",
     etat_station text,
     date_maj_station text,
     gid_region integer,
-    geom public.geometry
+    geom public.geometry,
+    -- constraints
+    CONSTRAINT {table_name}_unq_code_station UNIQUE (code_station),
+    CONSTRAINT fk_{table_name}_gid_region FOREIGN KEY(gid_region)
+      REFERENCES region_hydrographique(gid)
 );")
-  dbExecute(db_con, query)
-
-  query <- glue::glue("
-    ALTER TABLE {table_name}
-    ADD CONSTRAINT unq_code_station
-    UNIQUE (code_station);")
   dbExecute(db_con, query)
 
   query <- glue::glue("
     CREATE INDEX idx_geom_{table_name}
     ON {table_name} USING GIST (geom);")
-  dbExecute(db_con, query)
-
-  query <- glue::glue("
-    ALTER TABLE {table_name}
-    ADD CONSTRAINT fk_{table_name}_gid_region
-    FOREIGN KEY(gid_region)
-    REFERENCES region_hydrographique(gid);")
   dbExecute(db_con, query)
 
   query <- glue::glue("

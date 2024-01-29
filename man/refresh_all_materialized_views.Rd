@@ -4,10 +4,12 @@
 \alias{refresh_all_materialized_views}
 \title{Refresh all the materialized view in public schema database.}
 \usage{
-refresh_all_materialized_views(db_con)
+refresh_all_materialized_views(db_con, materialized_view)
 }
 \arguments{
 \item{db_con}{DBI connection to database.}
+
+\item{materialized_view}{Vector of materialized views.}
 }
 \value{
 text

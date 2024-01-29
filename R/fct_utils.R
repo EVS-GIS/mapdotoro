@@ -226,23 +226,28 @@ clean_duplicated <- function(dataset,
 #' Refresh all the materialized view in public schema database.
 #'
 #' @param db_con DBI connection to database.
+#' @param materialized_view Vector of materialized views.
 #'
 #' @importFrom DBI dbExecute dbDisconnect
+#' @importFrom glue glue
 #'
 #' @return text
 #' @export
-refresh_all_materialized_views <- function(db_con){
-  query <- "
+refresh_all_materialized_views <- function(db_con, materialized_view){
+  views <- paste0("'", paste(materialized_view, collapse = "','"), "'")
+  query <- glue::glue("
     DO $$
       DECLARE
+          view_names text[];
           view_name text;
       BEGIN
-          FOR view_name IN (SELECT matviewname FROM pg_matviews WHERE schemaname = 'public')
+          view_names := ARRAY[{views}];
+          FOREACH view_name IN ARRAY view_names
           LOOP
               EXECUTE 'REFRESH MATERIALIZED VIEW ' || view_name;
           END LOOP;
     END $$;
-  "
+  ")
   dbExecute(db_con, query)
 
   dbDisconnect(db_con)

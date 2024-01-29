@@ -35,18 +35,16 @@ create_table_region_hydrographique <- function(table_name = "region_hydrographiq
     lbregionhy text,
     cdbh text,
     display boolean DEFAULT false,
-    geom public.geometry(MultiPolygon)
+    geom public.geometry(MultiPolygon),
+    -- Constraints
+    CONSTRAINT {table_name}_unq_code_region UNIQUE (cdregionhy),
+    CONSTRAINT fk_{table_name}_cdbh FOREIGN KEY(cdbh)
+      REFERENCES bassin_hydrographique(cdbh)
     );")
   dbExecute(db_con, query)
 
   query <- glue::glue("
     CREATE INDEX idx_geom_{table_name} ON public.{table_name} USING gist (geom);")
-  dbExecute(db_con, query)
-
-  query <- glue::glue("
-    ALTER TABLE {table_name}
-    ADD CONSTRAINT unq_code_region
-    UNIQUE (cdregionhy);")
   dbExecute(db_con, query)
 
   query <- glue::glue("
@@ -59,13 +57,6 @@ create_table_region_hydrographique <- function(table_name = "region_hydrographiq
     ALTER TABLE {table_name}
     ALTER COLUMN geom TYPE geometry(Multipolygon)
     USING ST_Force2D(geom);")
-  dbExecute(db_con, query)
-
-  query <- glue::glue("
-    ALTER TABLE {table_name}
-    ADD CONSTRAINT fk_region_cdbh_bassin
-    FOREIGN KEY(cdbh)
-    REFERENCES bassin_hydrographique(cdbh);")
   dbExecute(db_con, query)
 
   reader <- Sys.getenv("DBMAPDO_DEV_READER")

@@ -2,9 +2,8 @@
 #'
 #' Description.
 #'
-#' @format A data frame with 10 rows and 70 variables:
+#' @format A data frame with 2386 rows and 69 variables:
 #' \describe{
-#'   \item{ gid }{  integer }
 #'   \item{ CdObstEcou }{  character }
 #'   \item{ StObstEcou }{  character }
 #'   \item{ CdModeVali }{  character }
