@@ -91,6 +91,7 @@ input_valley_bottom <- readr::read_csv(file.path("data-raw", "raw-datasets", "WI
 input_troncon_bdtopo_id <- readr::read_csv(file.path("data-raw", "raw-datasets", "troncon_bdtopo_id.csv"))
 input_elevation_profiles <- readr::read_csv(file.path("data-raw", "raw-datasets", "SWATH_ELEVATION_PROFILES.csv"))
 ```
+
 ### Prepare dataset
 ```{r, eval=FALSE}
 bassin_hydrographique <- prepare_bassin_hydrographique(input_bassin_hydrographique)
@@ -118,6 +119,8 @@ roe <- prepare_roe(input_roe,
                    region_hydro = region_hydrographique,
                    troncon_bdtopo_id = input_troncon_bdtopo_id,
                    hydro_axis = hydro_swaths_and_axis$hydro_axis)
+
+elevation_profiles <- prepare_elevation_profiles(dataset = input_elevation_profiles)
 ```
 
 

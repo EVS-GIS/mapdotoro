@@ -7,7 +7,7 @@
 prepare_talweg_metrics(dataset = input_talweg_metrics)
 }
 \arguments{
-\item{dataset}{data.frame hydrologic stations imported.}
+\item{dataset}{data.frame talweg metrics imported.}
 }
 \value{
 data.frame talweg metrics prepared.

@@ -1,6 +1,6 @@
 #' Prepare talweg metrics to database export.
 #'
-#' @param dataset data.frame hydrologic stations imported.
+#' @param dataset data.frame talweg metrics imported.
 #'
 #' @return data.frame talweg metrics prepared.
 #' @export

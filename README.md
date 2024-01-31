@@ -117,6 +117,8 @@ roe <- prepare_roe(input_roe,
                    region_hydro = region_hydrographique,
                    troncon_bdtopo_id = input_troncon_bdtopo_id,
                    hydro_axis = hydro_swaths_and_axis$hydro_axis)
+
+elevation_profiles <- prepare_elevation_profiles(dataset = input_elevation_profiles)
 ```
 
 ### Set database structure
