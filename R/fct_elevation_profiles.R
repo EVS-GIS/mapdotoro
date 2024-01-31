@@ -1,25 +1,35 @@
-#' Prepare talweg metrics to database export.
+#' Prepare elevation profiles to database export.
 #'
-#' @param dataset data.frame talweg metrics imported.
+#' @param dataset data.frame elevation profiles imported.
 #'
-#' @return data.frame talweg metrics prepared.
+#' @importFrom dplyr filter group_by summarise first mutate if_else
+#'
+#' @return data.frame elevation profiles prepared.
 #' @export
-prepare_talweg_metrics <- function(dataset = input_talweg_metrics){
+prepare_elevation_profiles <- function(dataset = input_elevation_profiles){
 
-  talweg_metrics <- dataset %>%
-    rename_all(clean_column_names)
-
-  talweg_metrics_duplicated <- check_duplicate(talweg_metrics, axis_field = "axis",measure_field = "measure")
-
-  talweg_metrics_cleaned <- clean_duplicated(dataset = talweg_metrics,
-                                              duplicated_dataset = talweg_metrics_duplicated$duplicated_rows,
-                                              axis_field = "axis", measure_field = "measure") %>%
+  profiles <- dataset %>%
+    # get only median profile
+    filter(quantile== 50) %>%
+    # left right side not need
+    group_by(sample) %>%
+    summarise(quantile = first(quantile),
+                     density = sum(density),
+                     mean = sum(mean),
+                     profile = first(profile),
+                     axis = first(axis),
+                     measure = first(measure),
+                     distance = first(distance)) %>%
+    # remove row when no sample exist, generally at the profile edges (profile = 0 and not NA)
+    filter(density > 0) %>%
+    # inverse distance signe to have negative distance on left bank
+    mutate(distance = if_else(distance != 0, -distance, 0)) %>%
     rename("measure_medial_axis" = "measure")
 
-  return(talweg_metrics_cleaned)
+  return(profiles)
 }
 
-#' Create talweg_metrics table structure.
+#' Create elevation_profiles table structure.
 #'
 #' @param table_name table name.
 #' @param db_con DBI database connection.
@@ -29,26 +39,25 @@ prepare_talweg_metrics <- function(dataset = input_talweg_metrics){
 #'
 #' @return text
 #' @export
-create_table_talweg_metrics <- function(table_name = "talweg_metrics",
-                                               db_con){
+create_table_elevation_profiles <- function(table_name = "elevation_profiles",
+                                            db_con){
 
   reader <- Sys.getenv("DBMAPDO_DEV_READER")
 
   query <- glue::glue("
     CREATE TABLE public.{table_name} (
     id BIGSERIAL PRIMARY KEY,
-    swath double precision,
-    elevation_talweg double precision,
-    elevation_talweg_med double precision,
-    height_valley_bottom double precision,
-    slope_talweg double precision,
-    slope_valley_bottom double precision,
+    sample bigint,
+    quantile integer,
+    density integer,
+    mean double precision,
+    profile double precision,
     axis bigint,
     measure_medial_axis bigint,
-    sinuosity double precision,
+    distance integer,
     hydro_swaths_gid bigint,
     -- Constraints
-    CONSTRAINT {table_name}_unq_axis_measure UNIQUE (axis, measure_medial_axis),
+    CONSTRAINT {table_name}_unq_axis_measure UNIQUE (axis, measure_medial_axis, sample),
     CONSTRAINT fk_{table_name}_hydro_swaths_gid FOREIGN KEY(hydro_swaths_gid)
       REFERENCES hydro_swaths(gid) ON DELETE SET NULL
     );")
@@ -64,7 +73,7 @@ create_table_talweg_metrics <- function(table_name = "talweg_metrics",
   return(glue::glue("{table_name} has been successfully created"))
 }
 
-#' Add trigger function to react from talweg_metrics insert or delete.
+#' Add trigger function to react from elevation_profiles insert or delete.
 #'
 #' @param db_con DBI connection to database.
 #' @param table_name table name.
@@ -74,8 +83,8 @@ create_table_talweg_metrics <- function(table_name = "talweg_metrics",
 #'
 #' @return text
 #' @export
-fct_talweg_metrics_insert_delete_reaction <- function(db_con,
-                                                      table_name = "talweg_metrics"){
+fct_elevation_profiles_insert_delete_reaction <- function(db_con,
+                                                          table_name = "elevation_profiles"){
 
   query <- glue::glue("
     CREATE OR REPLACE FUNCTION {table_name}_insert_delete_reaction()
@@ -106,7 +115,7 @@ fct_talweg_metrics_insert_delete_reaction <- function(db_con,
   return(cat(glue::glue("{table_name}_insert_delete_reaction function added to database"), "\n"))
 }
 
-#' Create trigger to update tables from talweg_metrics modifications.
+#' Create trigger to update tables from elevation_profiles modifications.
 #'
 #' @param db_con DBI connection to database.
 #' @param table_name table name.
@@ -116,8 +125,8 @@ fct_talweg_metrics_insert_delete_reaction <- function(db_con,
 #'
 #' @return text
 #' @export
-trig_talweg_metrics <- function(db_con,
-                                table_name = "talweg_metrics"){
+trig_elevation_profiles <- function(db_con,
+                                    table_name = "elevation_profiles"){
 
   query <- glue::glue("
     CREATE OR REPLACE TRIGGER aftet_insert_{table_name}
@@ -131,9 +140,9 @@ trig_talweg_metrics <- function(db_con,
   return(cat(glue::glue("{table_name} triggers added to database"), "\n"))
 }
 
-#' Delete existing rows and insert talweg metrics to database.
+#' Delete existing rows and insert elevation profiles to database.
 #'
-#' @param dataset data.frame talweg metrics.
+#' @param dataset sf data.frame elevation profiles.
 #' @param table_name text database table name.
 #' @param db_con DBI connection to database.
 #' @param field_identifier text field identifier name to identified rows to remove.
@@ -143,10 +152,10 @@ trig_talweg_metrics <- function(db_con,
 #'
 #' @return text
 #' @export
-upsert_talweg_metrics <- function(dataset = talweg_metrics,
-                                  table_name = "talweg_metrics",
-                                  db_con,
-                                  field_identifier = "axis"){
+upsert_elevation_profiles <- function(dataset = elevation_profiles,
+                                      table_name = "elevation_profiles",
+                                      db_con,
+                                      field_identifier = "axis"){
 
   remove_rows(dataset = dataset,
               field_identifier = field_identifier,
@@ -160,3 +169,4 @@ upsert_talweg_metrics <- function(dataset = talweg_metrics,
 
   return(glue::glue("{table_name} updated with {rows_insert} inserted"))
 }
+

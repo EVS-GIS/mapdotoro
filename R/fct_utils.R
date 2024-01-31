@@ -121,7 +121,7 @@ set_displayed_bassin_region <- function(table_name,
 
 #' Remove rows in database table based on field identifier.
 #'
-#' @param dataset sf data.frame dataset.
+#' @param dataset data.frame dataset.
 #' @param field_identifier text field identifier name to identified rows to remove.
 #' @param table_name text database table name.
 #'
@@ -157,7 +157,7 @@ remove_rows <- function(dataset,
 
 #' Check for duplicate measure in streams axis.
 #'
-#' @param dataset sf data.frame.
+#' @param dataset data.frame.
 #' @param axis_field axis stream id.
 #' @param measure_field axis stream measure from exutoire.
 #'
@@ -196,10 +196,10 @@ check_duplicate <- function(dataset,
   return(list(duplicated_rows = duplicated_rows, duplicated_summary = duplicated_summary))
 }
 
-#' Drop all the duplicated rows from a duplicated sf data.frame.
+#' Drop all the duplicated rows from a duplicated data.frame.
 #'
-#' @param dataset sf data.frame.
-#' @param duplicated_dataset sf data.frame.
+#' @param dataset data.frame.
+#' @param duplicated_dataset data.frame.
 #' @param axis_field axis stream id.
 #' @param measure_field axis stream measure from exutoire.
 #'

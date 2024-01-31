@@ -48,5 +48,9 @@ globalVariables(unique(c(
   # upsert_talweg_metrics:
   "talweg_metrics",
   # upsert_valley_bottom:
-  "valley_bottom"
+  "valley_bottom",
+  # prepare_elevation_profiles:
+  "density", "distance", "input_elevation_profiles", "profile", "quantile",
+  # upsert_elevation_profiles:
+  "elevation_profiles"
 )))

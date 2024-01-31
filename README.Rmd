@@ -71,6 +71,7 @@ input_landcover <- landcover
 input_continuity <- continuity
 input_valley_bottom <- valley_bottom
 input_troncon_bdtopo_id <- troncon_bdtopo_id
+input_elevation_profiles <- elevation_profiles
 ```
 
 ### Datasets from the Fluvial Corridor Toolbox
@@ -88,7 +89,9 @@ input_landcover <- readr::read_csv(file.path("data-raw", "raw-datasets", "WIDTH_
 input_continuity <- readr::read_csv(file.path("data-raw", "raw-datasets", "WIDTH_CONTINUITY.csv"))
 input_valley_bottom <- readr::read_csv(file.path("data-raw", "raw-datasets", "WIDTH_VALLEY_BOTTOM.csv"))
 input_troncon_bdtopo_id <- readr::read_csv(file.path("data-raw", "raw-datasets", "troncon_bdtopo_id.csv"))
+input_elevation_profiles <- readr::read_csv(file.path("data-raw", "raw-datasets", "SWATH_ELEVATION_PROFILES.csv"))
 ```
+
 ### Prepare dataset
 ```{r, eval=FALSE}
 bassin_hydrographique <- prepare_bassin_hydrographique(input_bassin_hydrographique)
@@ -116,6 +119,8 @@ roe <- prepare_roe(input_roe,
                    region_hydro = region_hydrographique,
                    troncon_bdtopo_id = input_troncon_bdtopo_id,
                    hydro_axis = hydro_swaths_and_axis$hydro_axis)
+
+elevation_profiles <- prepare_elevation_profiles(dataset = input_elevation_profiles)
 ```
 
 
@@ -153,6 +158,9 @@ create_table_continuity_width(table_name = "continuity_width",
 
 create_table_valley_bottom(table_name = "valley_bottom",
                            db_con = db_con())
+
+create_table_elevation_profiles(table_name = "elevation_profiles",
+                                db_con = db_con())
 ```
 ### Add functions and triggers to Postgresql database
 ```{r, eval=FALSE}
@@ -179,6 +187,10 @@ trig_continuity_width(db_con = db_con(), table_name = "continuity_width")
 # valley_bottom triggers
 fct_valley_bottom_insert_delete_reaction(db_con = db_con(), table_name = "valley_bottom")
 trig_valley_bottom(db_con = db_con(), table_name = "valley_bottom")
+
+# elevation_profiles triggers
+fct_elevation_profiles_insert_delete_reaction(db_con = db_con(), table_name = "elevation_profiles")
+trig_elevation_profiles(db_con = db_con(), table_name = "elevation_profiles")
 ```
 
 ### Create views
@@ -258,6 +270,11 @@ upsert_valley_bottom(dataset = valley_bottom,
                      table_name = "valley_bottom",
                      db_con(),
                      field_identifier = "axis")
+
+upsert_elevation_profiles(dataset = elevation_profiles,
+                          table_name = "elevation_profiles",
+                          db_con(),
+                          field_identifier = "axis")
 
 # Refresh all the materialized views
 # !! order matters !! network_metrics depend of full_side views, need to be at last.

@@ -7,7 +7,7 @@
 remove_rows(dataset, field_identifier, table_name)
 }
 \arguments{
-\item{dataset}{sf data.frame dataset.}
+\item{dataset}{data.frame dataset.}
 
 \item{field_identifier}{text field identifier name to identified rows to remove.}
 
