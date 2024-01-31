@@ -2,7 +2,7 @@
 #'
 #' @param dataset data.frame elevation profiles imported.
 #'
-#' @importFrom dplyr filter group_by summarise first
+#' @importFrom dplyr filter group_by summarise first mutate if_else
 #'
 #' @return data.frame elevation profiles prepared.
 #' @export
@@ -22,6 +22,8 @@ prepare_elevation_profiles <- function(dataset = input_elevation_profiles){
                      distance = first(distance)) %>%
     # remove row when no sample exist, generally at the profile edges (profile = 0 and not NA)
     filter(density > 0) %>%
+    # inverse distance signe to have negative distance on left bank
+    mutate(distance = if_else(distance != 0, -distance, 0)) %>%
     rename("measure_medial_axis" = "measure")
 
   return(profiles)
