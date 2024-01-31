@@ -71,6 +71,7 @@ input_landcover <- landcover
 input_continuity <- continuity
 input_valley_bottom <- valley_bottom
 input_troncon_bdtopo_id <- troncon_bdtopo_id
+input_elevation_profiles <- elevation_profiles
 ```
 
 ### Datasets from the Fluvial Corridor Toolbox
@@ -88,6 +89,7 @@ input_landcover <- readr::read_csv(file.path("data-raw", "raw-datasets", "WIDTH_
 input_continuity <- readr::read_csv(file.path("data-raw", "raw-datasets", "WIDTH_CONTINUITY.csv"))
 input_valley_bottom <- readr::read_csv(file.path("data-raw", "raw-datasets", "WIDTH_VALLEY_BOTTOM.csv"))
 input_troncon_bdtopo_id <- readr::read_csv(file.path("data-raw", "raw-datasets", "troncon_bdtopo_id.csv"))
+input_elevation_profiles <- readr::read_csv(file.path("data-raw", "raw-datasets", "SWATH_ELEVATION_PROFILES.csv"))
 ```
 ### Prepare dataset
 ```{r, eval=FALSE}

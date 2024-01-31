@@ -2,9 +2,10 @@
 #'
 #' Description.
 #'
-#' @format A data frame with 835 rows and 8 variables:
+#' @format A data frame with 8800 rows and 9 variables:
 #' \describe{
 #'   \item{ sample }{  numeric }
+#'   \item{ side }{  character }
 #'   \item{ quantile }{  numeric }
 #'   \item{ density }{  numeric }
 #'   \item{ mean }{  numeric }
