@@ -169,7 +169,7 @@ trig_continuity_area <- function(db_con,
 
 #' Delete existing rows and insert continuity area to database.
 #'
-#' @param dataset sf data.frame continuity area.
+#' @param dataset data.frame continuity area.
 #' @param table_name text database table name.
 #' @param db_con DBI connection to database.
 #' @param field_identifier text field identifier name to identified rows to remove.
@@ -180,20 +180,17 @@ trig_continuity_area <- function(db_con,
 #' @return text
 #' @export
 upsert_continuity_area <- function(dataset = continuity_area,
-                                  table_name = "continuity_area",
-                                  db_con,
-                                  field_identifier = "axis"){
+                                   table_name = "continuity_area",
+                                   db_con,
+                                   field_identifier = "axis"){
 
-  continuity <- dataset %>%
-    as.data.frame()
-
-  remove_rows(dataset = continuity,
+  remove_rows(dataset = dataset,
               field_identifier = field_identifier,
               table_name = table_name)
 
-  dbWriteTable(conn = db_con, name = table_name, value = continuity, append = TRUE)
+  dbWriteTable(conn = db_con, name = table_name, value = dataset, append = TRUE)
 
-  rows_insert <- nrow(continuity)
+  rows_insert <- nrow(dataset)
 
   dbDisconnect(db_con)
 

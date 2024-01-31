@@ -236,6 +236,12 @@ fct_hydro_swaths_insert_delete_reaction <- function(db_con,
         WHERE NEW.axis = valley_bottom.axis
            AND NEW.measure_medial_axis = valley_bottom.measure_medial_axis;
 
+         -- update {table_name}_gid from elevation_profiles
+        UPDATE elevation_profiles
+        SET {table_name}_gid = NEW.gid
+        WHERE NEW.axis = elevation_profiles.axis
+           AND NEW.measure_medial_axis = elevation_profiles.measure_medial_axis;
+
         RETURN NEW;
 
       END IF;

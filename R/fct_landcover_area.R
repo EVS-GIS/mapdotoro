@@ -186,16 +186,13 @@ upsert_landcover_area <- function(dataset = landcover_area,
                                   db_con,
                                   field_identifier = "axis"){
 
-  landcover <- dataset %>%
-    as.data.frame()
-
-  remove_rows(dataset = landcover,
+  remove_rows(dataset = dataset,
               field_identifier = field_identifier,
               table_name = table_name)
 
-  dbWriteTable(conn = db_con, name = table_name, value = landcover, append = TRUE)
+  dbWriteTable(conn = db_con, name = table_name, value = dataset, append = TRUE)
 
-  rows_insert <- nrow(landcover)
+  rows_insert <- nrow(dataset)
 
   dbDisconnect(db_con)
 

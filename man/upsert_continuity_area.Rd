@@ -12,7 +12,7 @@ upsert_continuity_area(
 )
 }
 \arguments{
-\item{dataset}{sf data.frame continuity area.}
+\item{dataset}{data.frame continuity area.}
 
 \item{table_name}{text database table name.}
 

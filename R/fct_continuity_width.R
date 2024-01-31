@@ -184,16 +184,13 @@ upsert_continuity_width <- function(dataset = continuity_width,
                                    db_con,
                                    field_identifier = "axis"){
 
-  continuity <- dataset %>%
-    as.data.frame()
-
-  remove_rows(dataset = continuity,
+  remove_rows(dataset = dataset,
               field_identifier = field_identifier,
               table_name = table_name)
 
-  dbWriteTable(conn = db_con, name = table_name, value = continuity, append = TRUE)
+  dbWriteTable(conn = db_con, name = table_name, value = dataset, append = TRUE)
 
-  rows_insert <- nrow(continuity)
+  rows_insert <- nrow(dataset)
 
   dbDisconnect(db_con)
 

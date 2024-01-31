@@ -12,7 +12,7 @@ upsert_talweg_metrics(
 )
 }
 \arguments{
-\item{dataset}{sf data.frame talweg metrics.}
+\item{dataset}{data.frame talweg metrics.}
 
 \item{table_name}{text database table name.}
 

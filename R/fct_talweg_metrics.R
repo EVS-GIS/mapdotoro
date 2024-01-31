@@ -36,7 +36,7 @@ create_table_talweg_metrics <- function(table_name = "talweg_metrics",
 
   query <- glue::glue("
     CREATE TABLE public.{table_name} (
-    id SERIAL PRIMARY KEY,
+    id BIGSERIAL PRIMARY KEY,
     swath double precision,
     elevation_talweg double precision,
     elevation_talweg_med double precision,
@@ -133,7 +133,7 @@ trig_talweg_metrics <- function(db_con,
 
 #' Delete existing rows and insert talweg metrics to database.
 #'
-#' @param dataset sf data.frame talweg metrics.
+#' @param dataset data.frame talweg metrics.
 #' @param table_name text database table name.
 #' @param db_con DBI connection to database.
 #' @param field_identifier text field identifier name to identified rows to remove.
@@ -148,16 +148,13 @@ upsert_talweg_metrics <- function(dataset = talweg_metrics,
                                   db_con,
                                   field_identifier = "axis"){
 
-  metrics <- dataset %>%
-    as.data.frame()
-
-  remove_rows(dataset = metrics,
+  remove_rows(dataset = dataset,
               field_identifier = field_identifier,
               table_name = table_name)
 
-  dbWriteTable(conn = db_con, name = table_name, value = metrics, append = TRUE)
+  dbWriteTable(conn = db_con, name = table_name, value = dataset, append = TRUE)
 
-  rows_insert <- nrow(metrics)
+  rows_insert <- nrow(dataset)
 
   dbDisconnect(db_con)
 

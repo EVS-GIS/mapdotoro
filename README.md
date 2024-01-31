@@ -156,6 +156,9 @@ create_table_continuity_width(table_name = "continuity_width",
 
 create_table_valley_bottom(table_name = "valley_bottom",
                            db_con = db_con())
+
+create_table_elevation_profiles(table_name = "elevation_profiles",
+                                db_con = db_con())
 ```
 
 ### Add functions and triggers to Postgresql database
@@ -184,6 +187,10 @@ trig_continuity_width(db_con = db_con(), table_name = "continuity_width")
 # valley_bottom triggers
 fct_valley_bottom_insert_delete_reaction(db_con = db_con(), table_name = "valley_bottom")
 trig_valley_bottom(db_con = db_con(), table_name = "valley_bottom")
+
+# elevation_profiles triggers
+fct_elevation_profiles_insert_delete_reaction(db_con = db_con(), table_name = "elevation_profiles")
+trig_elevation_profiles(db_con = db_con(), table_name = "elevation_profiles")
 ```
 
 ### Create views
@@ -268,6 +275,11 @@ upsert_valley_bottom(dataset = valley_bottom,
                      table_name = "valley_bottom",
                      db_con(),
                      field_identifier = "axis")
+
+upsert_elevation_profiles(dataset = elevation_profiles,
+                          table_name = "elevation_profiles",
+                          db_con(),
+                          field_identifier = "axis")
 
 # Refresh all the materialized views
 # !! order matters !! network_metrics depend of full_side views, need to be at last.

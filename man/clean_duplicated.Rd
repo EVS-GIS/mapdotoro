@@ -2,7 +2,7 @@
 % Please edit documentation in R/fct_utils.R
 \name{clean_duplicated}
 \alias{clean_duplicated}
-\title{Drop all the duplicated rows from a duplicated sf data.frame.}
+\title{Drop all the duplicated rows from a duplicated data.frame.}
 \usage{
 clean_duplicated(
   dataset,
@@ -12,9 +12,9 @@ clean_duplicated(
 )
 }
 \arguments{
-\item{dataset}{sf data.frame.}
+\item{dataset}{data.frame.}
 
-\item{duplicated_dataset}{sf data.frame.}
+\item{duplicated_dataset}{data.frame.}
 
 \item{axis_field}{axis stream id.}
 
@@ -24,5 +24,5 @@ clean_duplicated(
 sf data.frame.
 }
 \description{
-Drop all the duplicated rows from a duplicated sf data.frame.
+Drop all the duplicated rows from a duplicated data.frame.
 }

@@ -7,7 +7,7 @@
 check_duplicate(dataset, axis_field = "AXIS", measure_field = "M")
 }
 \arguments{
-\item{dataset}{sf data.frame.}
+\item{dataset}{data.frame.}
 
 \item{axis_field}{axis stream id.}
 
