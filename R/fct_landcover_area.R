@@ -87,7 +87,7 @@ create_table_landcover_area <- function(table_name = "landcover_area",
     hydro_swaths_gid bigint,
     -- Constraints
     CONSTRAINT fk_{table_name}_hydro_swaths_gid FOREIGN KEY(hydro_swaths_gid)
-      REFERENCES hydro_swaths(gid) ON DELETE CASCADE
+      REFERENCES hydro_swaths(gid) ON DELETE SET NULL
     );")
   dbExecute(db_con, query)
 

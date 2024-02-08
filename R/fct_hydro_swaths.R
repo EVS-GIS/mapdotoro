@@ -48,6 +48,16 @@ prepare_hydro_swaths_and_axis <- function(swaths_dataset = input_swaths,
   }
 
   #### clean duplicated lines ####
+
+  # Explanation : some hydrologic segment are splitted by swaths into numerous small reaches
+  # (generally < 1m, the FCT DEM resolution) at the swaths borders.
+  # Each little reaches have the same swaths id (axis and measure) and all the attributs.
+  # For example a segment can be split into a 220m reach and 3 small reaches <1m located
+  # at the swath orders. The clean duplicated operation identified these duplicated reaches
+  # and keep only the longest reaches. We set NA the "measure" field for the other small
+  # reaches but not removing geometries. So small reaches are kept in hydro_swaths to create
+  # the axis linestring but with an empty "measure" field.
+
   # prepare hydro_swaths to clean duplicate
   hydro_swaths <- hydro_swaths %>%
     mutate(id = row_number()) %>% # create an unique id
@@ -59,12 +69,18 @@ prepare_hydro_swaths_and_axis <- function(swaths_dataset = input_swaths,
   cat("fix duplicated [AXIS, M] lines without removing geometries", "\n")
   # in the duplicated lines, identified the shortest
   hydro_swaths_prepared_clean <- st_sf(st_sfc(crs = 2154)) # create an empty sf dataset
-  for (measure in unique(hydro_swaths_duplicated$duplicated_rows$M)){
-    duplicate_to_fix <- hydro_swaths_duplicated$duplicated_rows %>%
-      filter(M == measure) %>%
-      filter(LENG < max(LENG)) %>% # the shortest lines will be removed
-      mutate(M = -1) # set the shortest line to -1 to identify them
-    hydro_swaths_prepared_clean <- rbind(hydro_swaths_prepared_clean, duplicate_to_fix)
+  # iterate by axis
+  for (axis in unique(hydro_swaths_duplicated$duplicated_rows$AXIS)){
+    selected_axis <- hydro_swaths_duplicated$duplicated_rows %>%
+      filter(AXIS == axis)
+    # iterate by measure
+    for (measure in unique(selected_axis$M)){
+      duplicate_to_fix <- selected_axis %>%
+        filter(M == measure) %>%
+        filter(LENG < max(LENG)) %>% # the shortest lines will be removed
+        mutate(M = -1) # set the shortest line to -1 to identify them
+      hydro_swaths_prepared_clean <- rbind(hydro_swaths_prepared_clean, duplicate_to_fix)
+    }
   }
 
   # prepare the duplicated lines to merge with hydro_swaths
@@ -98,7 +114,7 @@ prepare_hydro_swaths_and_axis <- function(swaths_dataset = input_swaths,
                          FROM_NODE_FIELD = "NODEA",
                          TO_NODE_FIELD = "NODEB")
 
-  #### Add Stahler order ####
+  #### Add Strahler order ####
   # need integer fid and not numeric to perform QGIS spatial join
   referentiel_hydro <- referentiel_hydro_dataset # copy data.frame
   referentiel_hydro$fid <- as.integer(referentiel_hydro$fid)

@@ -10,7 +10,7 @@ db_con <- function(){
                            host = Sys.getenv("DBMAPDO_HOST"),
                            port = Sys.getenv("DBMAPDO_PORT"),
                            dbname = Sys.getenv("DBMAPDO_NAME"),
-                           user      = Sys.getenv("DBMAPDO_USER"),
-                           password  = Sys.getenv("DBMAPDO_PASS"))
+                           user      = Sys.getenv("DBMAPDO_USER_APP"),
+                           password  = Sys.getenv("DBMAPDO_PASS_APP"))
   return(db_con)
 }

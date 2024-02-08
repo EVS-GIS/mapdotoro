@@ -45,7 +45,8 @@ prepare_roe <- function(dataset = input_roe,
                          REFERENCE_LAYER = hydro_swaths_and_axis$hydro_axis,
                          TOLERANCE = 100)
 
-  # get only ROE fitted on lines for ROE locate upstreams below stream network resolution
+  # roe_prepared_snaped return all the ROE with the ROE snapped below the TOLERANCE defined.
+  # we need to keep only the ROE snapped with a spatial filter
   roe_prepared_on_axis <- st_read(roe_prepared_snaped$OUTPUT) %>%
     st_filter(hydro_swaths_and_axis$hydro_axis, .predicate = st_intersects)
 
