@@ -1,4 +1,8 @@
-#' Prepare landcover or continuity dataset to have area for each label
+#' Prepare landcover or continuity dataset to have area for each label.
+#'
+#' Each landcover and continuity dataset have several rows for each swath by label and left or right
+#' side. We need to pivot the dataset to have two row for each side, and area labels are summarized in
+#' columns.
 #'
 #' @param dataset A landuse or continuity data.frame.
 #'
@@ -33,6 +37,10 @@ pivot_landcover_continuity_area <- function(dataset){
 }
 
 #' Prepare continuity dataset to have width for each label
+#'
+#' Each landcover and continuity dataset have several rows for each swath by label and left or right
+#' side. We need to pivot the dataset to have two row for each side, and width labels are summarized in
+#' columns.
 #'
 #' @param dataset A continuity data.frame.
 #'
@@ -81,6 +89,9 @@ clean_column_names <- function(names) {
 
 #' Set display column value for bassin or region table.
 #'
+#' Set the display field in hydrographic bassin or region database tables.
+#' The display field is used for mapdoapp to show only the wanted bassins and regions data.
+#'
 #' @param table_name bassin or region table name.
 #' @param display_codes_bassin_or_region A vector with the list of cdbh for bassin, cdregionhy for region value to set the displayed polygons.
 #' @param db_con DBI connection to database.
@@ -120,6 +131,8 @@ set_displayed_bassin_region <- function(table_name,
 }
 
 #' Remove rows in database table based on field identifier.
+#'
+#' All the rows in the database table are removed based on values in field identifier in the dataset.
 #'
 #' @param dataset data.frame dataset.
 #' @param field_identifier text field identifier name to identified rows to remove.
@@ -199,9 +212,9 @@ check_duplicate <- function(dataset,
 #' Drop all the duplicated rows from a duplicated data.frame.
 #'
 #' @param dataset data.frame.
-#' @param duplicated_dataset data.frame.
+#' @param duplicated_dataset data.frame produce by check_duplicate function.
 #' @param axis_field axis stream id.
-#' @param measure_field axis stream measure from exutoire.
+#' @param measure_field axis stream measure.
 #'
 #' @importFrom sf st_drop_geometry
 #' @importFrom dplyr anti_join
