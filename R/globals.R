@@ -3,8 +3,6 @@ globalVariables(unique(c(
   ".data",
   # clean_column_names:
   ".",
-  # import_hydro_stations:
-  "code_station", "etat_station",
   # pivot_continuity_width:
   ".", "axis", "measure", "side", "sum_width", "width1",
   # pivot_landcover_continuity_area:
@@ -17,8 +15,6 @@ globalVariables(unique(c(
   "input_continuity", "measure", "side",
   # prepare_hydro_axis:
   "axis", "AXIS", "geom", "gid_region", "hydro_swaths", "input_referentiel_hydro", "TOPONYME",
-  # prepare_hydro_stations:
-  "gid", "input_hydro_stations", "region_hydrographique",
   # prepare_hydro_swaths_and_axis:
   ".", "AXIS", "DRAINAGE", "geometry", "gid", "id", "input_referentiel_hydro", "input_swaths", "LENG", "m", "M", "M.x", "M.y", "NODEA", "NODEB", "region_hydrographique", "VALUE",
   # prepare_landcover_area:
@@ -37,8 +33,6 @@ globalVariables(unique(c(
   "continuity_area",
   # upsert_continuity_width:
   "continuity_width",
-  # upsert_hydro_stations:
-  "hydro_stations",
   # upsert_landcover_area:
   "landcover_area",
   # upsert_region_hydrographique:
@@ -52,5 +46,11 @@ globalVariables(unique(c(
   # prepare_elevation_profiles:
   "density", "distance", "input_elevation_profiles", "profile", "quantile",
   # upsert_elevation_profiles:
-  "elevation_profiles"
+  "elevation_profiles",
+  # import_hydro_sites:
+  "code_site", "statut_site",
+  # prepare_hydro_sites:
+  "altitude_site", "code_cours_eau", "code_entite_hydro_site", "code_site", "code_systeme_alti_site", "code_troncon_hydro_site", "code_zone_hydro_site", "date_maj_site", "grandeur_hydro", "input_hydro_sites", "libelle_cours_eau", "libelle_site", "statut_site", "surface_bv", "type_site", "uri_cours_eau", "url_site",
+  # upsert_hydro_sites:
+  "hydro_sites"
 )))

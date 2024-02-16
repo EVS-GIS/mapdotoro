@@ -59,7 +59,7 @@ WHERE (liens_vers_cours_d_eau IS NOT NULL AND liens_vers_cours_d_eau != '')
 input_bassin_hydrographique <- bassin_hydrographique
 input_region_hydrographique <- region_hydrographique
 input_roe <- roe
-input_hydro_stations <- hydro_stations
+input_hydro_sites <- hydro_sites
 input_referentiel_hydro <- referentiel_hydro
 input_swaths <- swaths
 input_talweg_metrics <- talweg_metrics
@@ -78,7 +78,7 @@ input_bassin_hydrographique <- sf::st_read(dsn = file.path("data-raw", "raw-data
 input_region_hydrographique <- sf::st_read(dsn = file.path("data-raw", "raw-datasets",
                                                  "region_hydrographique.gpkg"))
 input_roe <- sf::st_read(dsn = file.path("data-raw", "raw-datasets", "roe.gpkg"))
-input_hydro_stations <- import_hydro_stations(url = "https://hubeau.eaufrance.fr/api/v1/ecoulement/stations?format=json")
+input_hydro_sites <- import_hydro_sites()
 input_talweg_metrics <- readr::read_csv(file.path("data-raw", "raw-datasets", "TALWEG_METRICS.csv"))
 input_referentiel_hydro <- sf::st_read(dsn = file.path("data-raw", "raw-datasets", "REFERENTIEL_HYDRO.shp"))
 input_swaths <- sf::st_read(dsn = file.path("data-raw", "raw-datasets", "SWATHS_MEDIALAXIS.shp"))
@@ -96,8 +96,8 @@ bassin_hydrographique <- prepare_bassin_hydrographique(input_bassin_hydrographiq
 
 region_hydrographique <- prepare_region_hydrographique(input_region_hydrographique)
 
-hydro_stations <- prepare_hydro_stations(dataset = input_hydro_stations,
-                                         region_hydro = region_hydrographique)
+hydro_sites <- prepare_hydro_sites(dataset = input_hydro_sites,
+                                   region_hydro = region_hydrographique)
 
 talweg_metrics <- prepare_talweg_metrics(dataset = input_talweg_metrics)
 
@@ -139,8 +139,8 @@ create_table_hydro_swaths(table_name = "hydro_swaths",
 create_table_roe(table_name = "roe",
                  db_con = db_con())
 
-create_table_hydro_stations(table_name = "hydro_stations",
-                            db_con = db_con())
+create_table_hydro_sites(table_name = "hydro_sites",
+                         db_con = db_con())
 
 create_table_talweg_metrics(table_name = "talweg_metrics",
                             db_con = db_con())
@@ -233,11 +233,10 @@ set_displayed_bassin_region(table_name = "region_hydrographique",
                             field_identifier = "cdregionhy",
                             db_con = db_con())
 
-# Delete and insert rows in table. !! Don't forget to refresh materialized views !! 
-upsert_hydro_stations(dataset = hydro_stations,
-                      table_name = "hydro_stations",
-                      db_con = db_con(),
-                      field_identifier = "code_station")
+upsert_hydro_sites(dataset = hydro_sites,
+                   table_name = "hydro_sites",
+                   db_con = db_con(),
+                   field_identifier = "code_site")
 
 upsert_hydro_swaths_and_axis(hydro_swaths_dataset = hydro_swaths_and_axis$hydro_swaths,
                              hydro_swaths_table_name = "hydro_swaths",

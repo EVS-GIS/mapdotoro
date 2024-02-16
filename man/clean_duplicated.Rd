@@ -14,11 +14,11 @@ clean_duplicated(
 \arguments{
 \item{dataset}{data.frame.}
 
-\item{duplicated_dataset}{data.frame.}
+\item{duplicated_dataset}{data.frame produce by check_duplicate function.}
 
 \item{axis_field}{axis stream id.}
 
-\item{measure_field}{axis stream measure from exutoire.}
+\item{measure_field}{axis stream measure.}
 }
 \value{
 sf data.frame.

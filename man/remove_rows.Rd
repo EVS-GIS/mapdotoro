@@ -17,5 +17,5 @@ remove_rows(dataset, field_identifier, table_name)
 text number of row deleted.
 }
 \description{
-Remove rows in database table based on field identifier.
+All the rows in the database table are removed based on values in field identifier in the dataset.
 }
