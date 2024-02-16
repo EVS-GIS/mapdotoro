@@ -24,5 +24,6 @@ set_displayed_bassin_region(
 text
 }
 \description{
-Set display column value for bassin or region table.
+Set the display field in hydrographic bassin or region database tables.
+The display field is used for mapdoapp to show only the wanted bassins and regions data.
 }
