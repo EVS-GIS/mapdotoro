@@ -26,6 +26,16 @@ plugin installed.
 Tested with QGIS version 3.28.13 and Fluvial Corridor Toolbox version
 1.0.11.
 
+## How to cite
+
+Manière, L. (2024). mapdotoro (Version 1.0.0) \[Computer software\].
+<https://github.com/EVS-GIS/mapdotoro>
+
+## Licence
+
+This program is released under the [GNU Public License
+v3](https://github.com/EVS-GIS/mapdoapp/blob/main/LICENSE).
+
 ## Workflow
 
 ### Get troncon id and cours d’eau id from the IGN BD TOPO in PostgreSQL/PostGIS database
