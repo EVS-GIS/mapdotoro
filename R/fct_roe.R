@@ -174,7 +174,7 @@ create_table_roe <- function(table_name = "roe",
     CONSTRAINT fk_{table_name}_gid_region FOREIGN KEY(gid_region)
       REFERENCES region_hydrographique(gid),
     CONSTRAINT fk_{table_name}_axis FOREIGN KEY(axis)
-      REFERENCES hydro_axis(axis)
+      REFERENCES hydro_axis(axis) ON DELETE CASCADE
     );")
   dbExecute(db_con, query)
 
