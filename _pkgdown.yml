@@ -2,3 +2,6 @@ url: https://evs-gis.github.io/mapdotoro/
 template:
   bootstrap: 5
 
+authors:
+  Louis Manière:
+    href: https://github.com/LouisManiere
