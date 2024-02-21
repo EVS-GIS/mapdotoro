@@ -12,7 +12,7 @@ the shiny application mapdoapp.
 ## Installation
 
 You can install the development version of mapdotoro from
-[GitHub](https://github.com/) with:
+[GitHub](https://github.com/EVS-GIS/mapdotoro) with:
 
 ``` r
 # install.packages("devtools")

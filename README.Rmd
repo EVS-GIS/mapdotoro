@@ -22,7 +22,7 @@ Mapdotoro aim to prepared the Fluvial Corridor Toolbox data outputs to the shiny
 
 ## Installation
 
-You can install the development version of mapdotoro from [GitHub](https://github.com/) with:
+You can install the development version of mapdotoro from [GitHub](https://github.com/EVS-GIS/mapdotoro) with:
 
 ``` r
 # install.packages("devtools")
