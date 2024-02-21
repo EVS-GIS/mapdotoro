@@ -16,3 +16,4 @@
 *.csv
 *.vrt
 /data-raw/temp
+docs
