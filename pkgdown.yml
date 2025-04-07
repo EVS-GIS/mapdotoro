@@ -1,9 +1,8 @@
-pandoc: 2.19.2
-pkgdown: 2.0.7
+pandoc: 3.1.11
+pkgdown: 2.1.1
 pkgdown_sha: ~
 articles: {}
-last_built: 2024-02-21T12:48Z
+last_built: 2025-04-07T12:57Z
 urls:
   reference: https://evs-gis.github.io/mapdotoro/reference
   article: https://evs-gis.github.io/mapdotoro/articles
-
