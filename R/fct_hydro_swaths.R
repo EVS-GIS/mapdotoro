@@ -15,6 +15,9 @@ prepare_hydro_swaths_and_axis <- function(swaths_dataset = input_swaths,
                                  referentiel_hydro_dataset = input_referentiel_hydro,
                                  region_hydro = region_hydrographique){
 
+  referentiel_hydro_dataset <- referentiel_hydro_dataset %>%
+    mutate(AXIS= as.numeric(AXIS))
+
   cat("Keep only valid swaths", "\n")
   swaths_valid <- swaths_dataset %>%
     filter(VALUE == 2)
@@ -24,7 +27,8 @@ prepare_hydro_swaths_and_axis <- function(swaths_dataset = input_swaths,
 
   # remove duplicated swaths
   swaths_cleaned <- clean_duplicated(dataset = swaths_valid,
-                                     duplicated_dataset = swaths_duplicated$duplicated_rows)
+                                     duplicated_dataset = swaths_duplicated$duplicated_rows) %>%
+    mutate(AXIS= as.numeric(AXIS))
 
   ### split hydro network by swaths ###
   cat("split", toString(substitute(referentiel_hydro_dataset)), "by swaths", "\n")
@@ -32,9 +36,16 @@ prepare_hydro_swaths_and_axis <- function(swaths_dataset = input_swaths,
   # clip by axis
   for (axis in unique(swaths_cleaned$AXIS)){
     swaths_axe <- swaths_cleaned %>%
-      filter(AXIS == axis) # get swaths by axis
+      filter(AXIS == as.numeric(axis)) # get swaths by axis
     hydro_axe <- referentiel_hydro_dataset %>%
-      filter(AXIS == axis) %>% # get streams by axis
+      filter(AXIS == as.numeric(axis))
+
+    if (nrow(hydro_axe)==0){
+      hydro_swaths <- hydro_swaths %>% filter(AXIS != axis)
+      next
+    }
+
+    hydro_axe <- hydro_axe %>% # get streams by axis
       st_zm () %>%
       st_combine() %>%
       st_sf() %>%
@@ -46,7 +57,6 @@ prepare_hydro_swaths_and_axis <- function(swaths_dataset = input_swaths,
       mutate(AXIS = ifelse(is.na(AXIS), axis, AXIS)) # fill axis field even if no swaths on network
     hydro_swaths <- rbind(hydro_swaths, hydro_swaths_axis) # fill the output dataset by axis
   }
-
   #### clean duplicated lines ####
 
   # Explanation : some hydrologic segment are splitted by swaths into numerous small reaches
@@ -117,7 +127,12 @@ prepare_hydro_swaths_and_axis <- function(swaths_dataset = input_swaths,
   #### Add Strahler order ####
   # need integer fid and not numeric to perform QGIS spatial join
   referentiel_hydro <- referentiel_hydro_dataset # copy data.frame
-  referentiel_hydro$fid <- as.integer(referentiel_hydro$fid)
+
+  if ("fid" %in% names(referentiel_hydro)){
+    referentiel_hydro$fid <- as.integer(referentiel_hydro$fid)
+  } else if ("GID" %in% names(referentiel_hydro)){
+    referentiel_hydro$fid <- as.integer(referentiel_hydro$GID)
+  }
 
   # create small buffer before spatial join
   referentiel_hydro_buff <- referentiel_hydro %>%

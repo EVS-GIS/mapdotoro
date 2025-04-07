@@ -5,11 +5,13 @@ authors:
     given-names: Louis
     orcid: https://orcid.org/0000-0003-0426-2975
     affiliation: "CNRS - Environnement Ville Société (UMR 5600)"
+  - family-names: Dunesme
+    given-names: Samuel
 title: "mapdotoro"
-version: 1.0.0
+version: 1.0.1
 repository-code: "https://github.com/EVS-GIS/mapdotoro"
 license: GPL-3.0 license
 identifiers:
   - type:
     value:
-date-released: 2024-02-19
+date-released: 2025-04-07

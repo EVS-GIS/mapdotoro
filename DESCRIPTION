@@ -1,7 +1,7 @@
 Type: Package
 Package: mapdotoro
 Title: Prepare The Fluvial Corridor Toolbox Python Data
-Version: 0.1.0
+Version: 1.0.1
 Authors@R: 
     person("Louis", "Manière", , "louis.maniere@ens-lyon.fr", role = c("aut", "cre"),
            comment = c(ORCID = "0000-0003-0426-2975"))

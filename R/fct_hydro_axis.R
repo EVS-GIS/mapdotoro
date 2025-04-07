@@ -15,8 +15,10 @@ prepare_hydro_axis <- function(referentiel_hydro_dataset = input_referentiel_hyd
   # prepare referentiel hydro to join with axis sf data.frame and get TOPONYME
   referentiel_hydro_no_geom <- referentiel_hydro_dataset %>%
     st_drop_geometry() %>%
+    filter(!is.na(TOPONYME)) %>%
     group_by(AXIS) %>%
-    select(AXIS, TOPONYME)
+    select(AXIS, TOPONYME) %>%
+    distinct()
 
   # hydro_axis preparation
   hydro_axis <- hydro_swaths_dataset %>%
@@ -24,10 +26,12 @@ prepare_hydro_axis <- function(referentiel_hydro_dataset = input_referentiel_hyd
     summarise(length = sum(length),
               gid_region = names(sort(table(gid_region), decreasing = TRUE))[1], # statistical mode
               geom = st_union(geom)) %>% # union geom and recalculate length
+    sf::st_cast("MULTILINESTRING") %>%
     left_join(referentiel_hydro_no_geom, by = c("axis" = "AXIS"), multiple = "first") %>% # add TOPONYME field
     rename_all(clean_column_names) %>%
-    lwgeom::st_snap_to_grid(0.00001) %>%  # fix multilinestring for st_merge_line
-    st_line_merge()
+    lwgeom::st_snap_to_grid(0.00001) %>% # fix multilinestring for st_merge_line
+    st_line_merge() %>%
+    sf::st_cast("LINESTRING")
 
   return(hydro_axis)
 }
