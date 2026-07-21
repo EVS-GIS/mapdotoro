@@ -18,4 +18,5 @@
 *.csv
 *.vrt
 /data-raw/temp
+/data-raw/raw-datasets
 docs

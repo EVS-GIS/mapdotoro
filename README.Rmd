@@ -201,14 +201,16 @@ trig_elevation_profiles(db_con = db_con(), table_name = "elevation_profiles")
 ```
 
 ### Create views
+
 ```{r, eval=FALSE}
 create_landcover_area_full_side_matview(db_con = db_con(), view_name = "landcover_area_full_side")
 create_continuity_width_full_side_matview(db_con = db_con(), view_name = "continuity_width_full_side")
 create_continuity_area_full_side_matview(db_con = db_con(), view_name = "continuity_area_full_side")
 create_valley_bottom_full_side_matview(db_con = db_con(), view_name = "valley_bottom_full_side")
-create_network_metrics_matview(db_con = db_con(), view_name = "network_metrics")
+create_network_metrics_matview(db_con = db_con(), view_name = "network_metrics_v2")
 create_network_axis_matview(db_con = db_con(), view_name = "network_axis")
 ```
+
 ### Fixed tables database : insert bassins and regions
 ```{r, eval=FALSE}
 # Rows can't be deleted for these two tables 
