@@ -388,6 +388,17 @@ create_network_metrics_matview <- function(db_con,
       	continuity_area_full_side.disconnected AS disconnected_pc,
       	continuity_area_full_side.built_pc AS built_environment_pc,
       	continuity_area_full_side.sum_area,
+      	segment_metrics.ids AS ids,
+      	segment_metrics.minmeasure AS minmeasure,
+      	segment_metrics.maxmeasure AS maxmeasure,
+      	segment_metrics.angle_local AS angle_local,
+      	segment_metrics.conf_margin AS conf_margin,
+      	segment_metrics.style AS style,
+      	segment_metrics.sinuosite AS sinuosite,
+      	segment_metrics.multi_channel_index AS multi_channel_index,
+      	segment_metrics.iles_vegetalisees AS iles_vegetalisees,
+        segment_metrics.w_star AS w_star,
+        segment_metrics.confinement AS confinement,
       	ST_SetSRID(hydro_swaths.geom, 4326)::geometry AS geom
     FROM hydro_swaths
     LEFT JOIN hydro_axis ON hydro_axis.axis = hydro_swaths.axis
@@ -395,7 +406,9 @@ create_network_metrics_matview <- function(db_con,
     LEFT JOIN continuity_width_full_side ON continuity_width_full_side.hydro_swaths_gid = hydro_swaths.gid
     LEFT JOIN landcover_area_full_side ON landcover_area_full_side.hydro_swaths_gid = hydro_swaths.gid
     LEFT JOIN continuity_area_full_side ON continuity_area_full_side.hydro_swaths_gid = hydro_swaths.gid
+    LEFT JOIN segment_metrics ON segment_metrics.fid= hydro_swaths.gid
     ")
+  
   dbExecute(db_con, query)
 
   query <- glue::glue("
