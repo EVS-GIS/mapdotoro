@@ -4,6 +4,7 @@
 .Ruserdata
 .Rdata
 .Renviron
+/data-raw/raw-datasets
 .httr-oauth
 .DS_Store
 .quarto
