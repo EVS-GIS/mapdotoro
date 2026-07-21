@@ -1,0 +1,163 @@
+# Package index
+
+## All functions
+
+- [`bassin_hydrographique`](https://evs-gis.github.io/mapdotoro/reference/bassin_hydrographique.md)
+  : bassin_hydrographique
+- [`carhyce_stations`](https://evs-gis.github.io/mapdotoro/reference/carhyce_stations.md)
+  : carhyce_stations
+- [`check_duplicate()`](https://evs-gis.github.io/mapdotoro/reference/check_duplicate.md)
+  : Check for duplicate measure in streams axis.
+- [`clean_column_names()`](https://evs-gis.github.io/mapdotoro/reference/clean_column_names.md)
+  : Format column names
+- [`clean_duplicated()`](https://evs-gis.github.io/mapdotoro/reference/clean_duplicated.md)
+  : Drop all the duplicated rows from a duplicated data.frame.
+- [`continuity`](https://evs-gis.github.io/mapdotoro/reference/continuity.md)
+  : continuity
+- [`create_continuity_area_full_side_matview()`](https://evs-gis.github.io/mapdotoro/reference/create_continuity_area_full_side_matview.md)
+  : Create continuity_area_full_side view
+- [`create_continuity_width_full_side_matview()`](https://evs-gis.github.io/mapdotoro/reference/create_continuity_width_full_side_matview.md)
+  : Create continuity_width_full_side view
+- [`create_landcover_area_full_side_matview()`](https://evs-gis.github.io/mapdotoro/reference/create_landcover_area_full_side_matview.md)
+  : Create landcover_area_full_side view
+- [`create_network_axis_matview()`](https://evs-gis.github.io/mapdotoro/reference/create_network_axis_matview.md)
+  : Create network axis view for mapdoapp application.
+- [`create_network_metrics_matview()`](https://evs-gis.github.io/mapdotoro/reference/create_network_metrics_matview.md)
+  : Create network metrics view for mapdoapp application.
+- [`create_table_bassin_hydrographique()`](https://evs-gis.github.io/mapdotoro/reference/create_table_bassin_hydrographique.md)
+  : Create bassin_hydrographique table structure.
+- [`create_table_continuity_area()`](https://evs-gis.github.io/mapdotoro/reference/create_table_continuity_area.md)
+  : Create continuity_area table structure.
+- [`create_table_continuity_width()`](https://evs-gis.github.io/mapdotoro/reference/create_table_continuity_width.md)
+  : Create continuity_width table structure.
+- [`create_table_elevation_profiles()`](https://evs-gis.github.io/mapdotoro/reference/create_table_elevation_profiles.md)
+  : Create elevation_profiles table structure.
+- [`create_table_hydro_axis()`](https://evs-gis.github.io/mapdotoro/reference/create_table_hydro_axis.md)
+  : Create hydro_axis table structure.
+- [`create_table_hydro_sites()`](https://evs-gis.github.io/mapdotoro/reference/create_table_hydro_sites.md)
+  : Create hydro_sites table structure.
+- [`create_table_hydro_swaths()`](https://evs-gis.github.io/mapdotoro/reference/create_table_hydro_swaths.md)
+  : Create hydro_swaths table structure
+- [`create_table_landcover_area()`](https://evs-gis.github.io/mapdotoro/reference/create_table_landcover_area.md)
+  : Create landcover_area table structure.
+- [`create_table_region_hydrographique()`](https://evs-gis.github.io/mapdotoro/reference/create_table_region_hydrographique.md)
+  : Create region_hydrographique table structure.
+- [`create_table_roe()`](https://evs-gis.github.io/mapdotoro/reference/create_table_roe.md)
+  : Create roe table structure
+- [`create_table_talweg_metrics()`](https://evs-gis.github.io/mapdotoro/reference/create_table_talweg_metrics.md)
+  : Create talweg_metrics table structure.
+- [`create_table_valley_bottom()`](https://evs-gis.github.io/mapdotoro/reference/create_table_valley_bottom.md)
+  : Create valley_bottom table structure.
+- [`create_valley_bottom_full_side_matview()`](https://evs-gis.github.io/mapdotoro/reference/create_valley_bottom_full_side_matview.md)
+  : Create valley_bottom_full_side view
+- [`db_con()`](https://evs-gis.github.io/mapdotoro/reference/db_con.md)
+  : Postgresql database connection.
+- [`elevation_profiles`](https://evs-gis.github.io/mapdotoro/reference/elevation_profiles.md)
+  : elevation_profiles
+- [`fct_continuity_area_insert_delete_reaction()`](https://evs-gis.github.io/mapdotoro/reference/fct_continuity_area_insert_delete_reaction.md)
+  : Add trigger function to react from continuity_area insert or delete.
+- [`fct_continuity_width_insert_delete_reaction()`](https://evs-gis.github.io/mapdotoro/reference/fct_continuity_width_insert_delete_reaction.md)
+  : Add trigger function to react from continuity_width insert or
+  delete.
+- [`fct_elevation_profiles_insert_delete_reaction()`](https://evs-gis.github.io/mapdotoro/reference/fct_elevation_profiles_insert_delete_reaction.md)
+  : Add trigger function to react from elevation_profiles insert or
+  delete.
+- [`fct_hydro_swaths_insert_delete_reaction()`](https://evs-gis.github.io/mapdotoro/reference/fct_hydro_swaths_insert_delete_reaction.md)
+  : Add trigger function to react from hydro_swaths insert or delete
+- [`fct_landcover_area_insert_delete_reaction()`](https://evs-gis.github.io/mapdotoro/reference/fct_landcover_area_insert_delete_reaction.md)
+  : Add trigger function to react from landcover_area insert or delete.
+- [`fct_talweg_metrics_insert_delete_reaction()`](https://evs-gis.github.io/mapdotoro/reference/fct_talweg_metrics_insert_delete_reaction.md)
+  : Add trigger function to react from talweg_metrics insert or delete.
+- [`fct_valley_bottom_insert_delete_reaction()`](https://evs-gis.github.io/mapdotoro/reference/fct_valley_bottom_insert_delete_reaction.md)
+  : Add trigger function to react from valley_bottom insert or delete.
+- [`hydro_sites`](https://evs-gis.github.io/mapdotoro/reference/hydro_sites.md)
+  : hydro_sites
+- [`import_hydro_sites()`](https://evs-gis.github.io/mapdotoro/reference/import_hydro_sites.md)
+  : Get hydrologic sites from Hubeau API.
+- [`landcover`](https://evs-gis.github.io/mapdotoro/reference/landcover.md)
+  : landcover
+- [`pivot_continuity_width()`](https://evs-gis.github.io/mapdotoro/reference/pivot_continuity_width.md)
+  : Prepare continuity dataset to have width for each label
+- [`pivot_landcover_continuity_area()`](https://evs-gis.github.io/mapdotoro/reference/pivot_landcover_continuity_area.md)
+  : Prepare landcover or continuity dataset to have area for each label.
+- [`prepare_bassin_hydrographique()`](https://evs-gis.github.io/mapdotoro/reference/prepare_bassin_hydrographique.md)
+  : Prepare bassin_hydrographique dataset to database export.
+- [`prepare_continuity_area()`](https://evs-gis.github.io/mapdotoro/reference/prepare_continuity_area.md)
+  : Prepare continuity area to database export.
+- [`prepare_continuity_width()`](https://evs-gis.github.io/mapdotoro/reference/prepare_continuity_width.md)
+  : Prepare continuity width to database export.
+- [`prepare_elevation_profiles()`](https://evs-gis.github.io/mapdotoro/reference/prepare_elevation_profiles.md)
+  : Prepare elevation profiles to database export.
+- [`prepare_hydro_axis()`](https://evs-gis.github.io/mapdotoro/reference/prepare_hydro_axis.md)
+  : Prepare hydrologic axis dataset to database export.
+- [`prepare_hydro_sites()`](https://evs-gis.github.io/mapdotoro/reference/prepare_hydro_sites.md)
+  : Prepare hydrometric sites to database export.
+- [`prepare_hydro_swaths_and_axis()`](https://evs-gis.github.io/mapdotoro/reference/prepare_hydro_swaths_and_axis.md)
+  : Prepare hydro_swaths dataset to database export.
+- [`prepare_landcover_area()`](https://evs-gis.github.io/mapdotoro/reference/prepare_landcover_area.md)
+  : Prepare landcover area to database export.
+- [`prepare_region_hydrographique()`](https://evs-gis.github.io/mapdotoro/reference/prepare_region_hydrographique.md)
+  : Prepare region_hydrographique dataset to database export.
+- [`prepare_roe()`](https://evs-gis.github.io/mapdotoro/reference/prepare_roe.md)
+  : Prepare roe dataset to database export.
+- [`prepare_talweg_metrics()`](https://evs-gis.github.io/mapdotoro/reference/prepare_talweg_metrics.md)
+  : Prepare talweg metrics to database export.
+- [`prepare_valley_bottom()`](https://evs-gis.github.io/mapdotoro/reference/prepare_valley_bottom.md)
+  : Prepare valley_bottom to database export.
+- [`referentiel_hydro`](https://evs-gis.github.io/mapdotoro/reference/referentiel_hydro.md)
+  : referentiel_hydro
+- [`refresh_all_materialized_views()`](https://evs-gis.github.io/mapdotoro/reference/refresh_all_materialized_views.md)
+  : Refresh all the materialized view in public schema database.
+- [`region_hydrographique`](https://evs-gis.github.io/mapdotoro/reference/region_hydrographique.md)
+  : region_hydrographique
+- [`remove_rows()`](https://evs-gis.github.io/mapdotoro/reference/remove_rows.md)
+  : Remove rows in database table based on field identifier.
+- [`roe`](https://evs-gis.github.io/mapdotoro/reference/roe.md) : roe
+- [`set_displayed_bassin_region()`](https://evs-gis.github.io/mapdotoro/reference/set_displayed_bassin_region.md)
+  : Set display column value for bassin or region table.
+- [`swaths`](https://evs-gis.github.io/mapdotoro/reference/swaths.md) :
+  swaths
+- [`talweg_metrics`](https://evs-gis.github.io/mapdotoro/reference/talweg_metrics.md)
+  : talweg_metrics
+- [`trig_continuity_area()`](https://evs-gis.github.io/mapdotoro/reference/trig_continuity_area.md)
+  : Create trigger to update tables from continuity_area modifications.
+- [`trig_continuity_width()`](https://evs-gis.github.io/mapdotoro/reference/trig_continuity_width.md)
+  : Create trigger to update tables from continuity_width modifications.
+- [`trig_elevation_profiles()`](https://evs-gis.github.io/mapdotoro/reference/trig_elevation_profiles.md)
+  : Create trigger to update tables from elevation_profiles
+  modifications.
+- [`trig_hydro_swaths()`](https://evs-gis.github.io/mapdotoro/reference/trig_hydro_swaths.md)
+  : Create trigger to update tables from hydro_swaths modifications.
+- [`trig_landcover_area()`](https://evs-gis.github.io/mapdotoro/reference/trig_landcover_area.md)
+  : Create trigger to update tables from landcover_area modifications.
+- [`trig_talweg_metrics()`](https://evs-gis.github.io/mapdotoro/reference/trig_talweg_metrics.md)
+  : Create trigger to update tables from talweg_metrics modifications.
+- [`trig_valley_bottom()`](https://evs-gis.github.io/mapdotoro/reference/trig_valley_bottom.md)
+  : Create trigger to update tables from valley_bottom modifications.
+- [`troncon_bdtopo_id`](https://evs-gis.github.io/mapdotoro/reference/troncon_bdtopo_id.md)
+  : troncon_bdtopo_id
+- [`upsert_bassin_hydrographique()`](https://evs-gis.github.io/mapdotoro/reference/upsert_bassin_hydrographique.md)
+  : Delete existing rows and insert hydrologic bassin to database
+- [`upsert_continuity_area()`](https://evs-gis.github.io/mapdotoro/reference/upsert_continuity_area.md)
+  : Delete existing rows and insert continuity area to database.
+- [`upsert_continuity_width()`](https://evs-gis.github.io/mapdotoro/reference/upsert_continuity_width.md)
+  : Delete existing rows and insert continuity width to database.
+- [`upsert_elevation_profiles()`](https://evs-gis.github.io/mapdotoro/reference/upsert_elevation_profiles.md)
+  : Delete existing rows and insert elevation profiles to database.
+- [`upsert_hydro_sites()`](https://evs-gis.github.io/mapdotoro/reference/upsert_hydro_sites.md)
+  : Delete existing rows and insert hydrometric sites to database.
+- [`upsert_hydro_swaths_and_axis()`](https://evs-gis.github.io/mapdotoro/reference/upsert_hydro_swaths_and_axis.md)
+  : Delete existing rows and insert hydrologic network splited by swaths
+  to database.
+- [`upsert_landcover_area()`](https://evs-gis.github.io/mapdotoro/reference/upsert_landcover_area.md)
+  : Delete existing rows and insert landcover area to database.
+- [`upsert_region_hydrographique()`](https://evs-gis.github.io/mapdotoro/reference/upsert_region_hydrographique.md)
+  : Delete existing rows and insert hydrologic region to database.
+- [`upsert_roe()`](https://evs-gis.github.io/mapdotoro/reference/upsert_roe.md)
+  : Delete existing rows and insert roe to database
+- [`upsert_talweg_metrics()`](https://evs-gis.github.io/mapdotoro/reference/upsert_talweg_metrics.md)
+  : Delete existing rows and insert talweg metrics to database.
+- [`upsert_valley_bottom()`](https://evs-gis.github.io/mapdotoro/reference/upsert_valley_bottom.md)
+  : Delete existing rows and insert valley botom to database.
+- [`valley_bottom`](https://evs-gis.github.io/mapdotoro/reference/valley_bottom.md)
+  : valley_bottom
