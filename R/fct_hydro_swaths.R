@@ -406,7 +406,7 @@ create_network_metrics_matview <- function(db_con,
     LEFT JOIN continuity_width_full_side ON continuity_width_full_side.hydro_swaths_gid = hydro_swaths.gid
     LEFT JOIN landcover_area_full_side ON landcover_area_full_side.hydro_swaths_gid = hydro_swaths.gid
     LEFT JOIN continuity_area_full_side ON continuity_area_full_side.hydro_swaths_gid = hydro_swaths.gid
-    LEFT JOIN segment_metrics ON segment_metrics.fid= hydro_swaths.gid
+    LEFT JOIN segment_metrics ON segment_metrics.fid= hydro_swaths.gid AND segment_metrics.axis = hydro_swaths.axis
     ")
   
   dbExecute(db_con, query)
