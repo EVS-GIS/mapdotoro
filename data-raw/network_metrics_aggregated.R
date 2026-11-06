@@ -40,7 +40,7 @@ fchar=function(x,y){
   return(result)
 }
 # si besoin de prendre un exemple
-selected_axis_id = 2000804457
+selected_axis_id = 2000894629 #la Garonne
 
 # Besoin de récupérer tous les identifiants d'axe
 all_axes=mapdoapp::data_get_axes(con) %>% 
@@ -75,6 +75,7 @@ treat_one_axis=function(selected_axis_id){
     data_result=geometries %>% 
       left_join(metrics) %>% 
       filter(!is.na(ids))
+    #ggplot(data_result, aes(x=measure, y=talweg_elevation_min))+geom_path()
     return(data_result)
 }
 # Prend environ 1h30 à tourner:
